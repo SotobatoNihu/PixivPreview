@@ -13,7 +13,7 @@
 // @match           https://www.pixiv.net/bookmark.php*
 // @match           https://www.pixiv.net/search.php*
 // @match           https://www.pixiv.net*
-// @version         0.0.1.20180819
+// @version         0.0.3.20180819
 // @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
 // @license         MIT License
 // @require         https://code.jquery.com/jquery-3.2.1.min.js
@@ -22,7 +22,7 @@
 // ==/UserScript==
 
 /*
-this script is based on "Pixiv Arts Preview & Followed Atrists Coloring"(MIT license).
+this script is based on "Pixiv Arts Preview & Followed Atrists Coloring"(MIT license),written by NightLancer
 for more details,please visit folows:
 https://greasyfork.org/ja/scripts/39387-pixiv-arts-preview-followed-atrists-coloring
 https://github.com/NightLancer/PixivPreview
@@ -576,10 +576,7 @@ https://github.com/NightLancer/PixivPreview
             init().then(result => setting = new Setting(result));
 
             $(document).ready(function(){
-                if (setting.openComment && page.isEnable(prop.openComment)) {
-                    util.openComment();
-                    console.log("comment opend");
-                }
+
                 if (setting.popup && page.isEnable(prop.popup_typeA)) {
                     util.setPopup(prop.popup_typeA);
                     console.log("popup  A is enable");
@@ -590,6 +587,10 @@ https://github.com/NightLancer/PixivPreview
             });
 
             window.onload = function () {
+                if (setting.openComment && page.isEnable(prop.openComment)) {
+                    util.openComment();
+                    console.log("comment opend");
+                }
                 console.log("pagetype:" + page.pagetype.toString());
                 if (setting.changeLayout && page.isEnable(prop.changeLayout)) {
                     util.changeLayout();
