@@ -13,7 +13,7 @@
 // @match           https://www.pixiv.net/bookmark.php*
 // @match           https://www.pixiv.net/search.php*
 // @match           https://www.pixiv.net*
-// @version         0.0.3.20180908
+// @version         0.1.1.20180917
 // @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
 // @license         MIT License
 // @require         https://code.jquery.com/jquery-3.2.1.min.js

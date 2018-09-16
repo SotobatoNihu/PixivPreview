@@ -222,31 +222,34 @@ class Util {
         }
     }
     openComment() {
-        const elem = document.getElementsByTagName("article")[0];
-        const comments = elem.querySelectorAll('a[aria-expanded="false"]');
-        for (let comment of comments) {
-            comment.setAttribute("aria-expanded", 'true');
-        }
-        /*
-        Object.keys(comments).forEach((i) => {
-            comments[i].click()
-        });
-        */
+        let elem = $("article");
+        elem.find("[aria-expanded='false']").click();
         var observer = new MutationObserver(function (MutationRecords, MutationObserver) {
-            const comments = elem.querySelectorAll('a[aria-expanded="false"]');
-            for (let comment of comments) {
-                comment.setAttribute("aria-expanded", 'true');
-            }
-            /*
-            Object.keys(comments).forEach((i) => {
-                comments[i].click()
-            });
-            */
+            elem.find("[aria-expanded='false']").click();
         });
         observer.observe(document, {
             childList: true,
             subtree: true,
         });
+        /*
+        const elem = document.getElementsByTagName("article")[0];
+        const comments = elem.querySelectorAll('a[aria-expanded="false"]')
+        for(let comment of comments){
+            comment.setAttribute("aria-expanded", 'true');
+        }
+
+        var observer = new MutationObserver(function (MutationRecords, MutationObserver) {
+            const comments = elem.querySelectorAll('a[aria-expanded="false"]')
+            for(let comment of comments){
+                comment.setAttribute("aria-expanded", 'true');
+            }
+
+        });
+        observer.observe(document, {
+            childList: true,
+            subtree: true,
+        });
+        */
     }
     setPopup(page, setting) {
         const popupUtil = new popupUtil_1.PopupUtil();
@@ -505,7 +508,6 @@ class PopupUtil {
             captionContainer.id = id;
             $(captionContainer).insertBefore(outerContainer);
         }
-        captionContainer.style.display = 'block';
         captionContainer.style.left = outerContainer.style.left;
         if (imageID === undefined || imageID.length === 0)
             return; //just in case
@@ -517,6 +519,12 @@ class PopupUtil {
             const date = new Date(json.body.createDate);
             const dateString = `<p><i>upload:${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes()}</i></p>`;
             const infoString = `<p><i>like :${json.body.likeCount}, bookmark:${json.body.bookmarkCount}, view: ${json.body.viewCount}</i></p>`;
+            captionContainer.style.display = 'block';
+            captionContainer.style.width = outerContainer.clientWidth + 'px';
+            captionContainer.style.backgroundColor = 'white';
+            captionContainer.style.wordWrap = 'break-word';
+            captionContainer.style.wordBreak = 'break-all';
+            captionContainer.style.whiteSpace = 'normal';
             captionContainer.innerHTML = json.body.description + dateString + infoString;
             const y = parseInt(outerContainer.style.top) - parseInt(captionContainer.getBoundingClientRect().height);
             captionContainer.style.top = y + 'px';
