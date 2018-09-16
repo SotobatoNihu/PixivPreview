@@ -15,7 +15,9 @@ This GreaseMonkey script adds the following functions：
 This script adds the following functions：
 
 このスクリプトは部分的に"Pixiv Arts Preview & Followed Atrists Coloring"のソースコードを使用しています。
+
 https://greasyfork.org/ja/scripts/39387-pixiv-arts-preview-followed-atrists-coloring
+
 https://github.com/NightLancer/PixivPreview
 
 
