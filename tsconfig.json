@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module":"none",
+    "rootDir": "./src/",
+    "strict": false,
+   "allowJs":true
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
