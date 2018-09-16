@@ -65,31 +65,34 @@ class Util {
         }
     }
     openComment() {
-        const elem = document.getElementsByTagName("article")[0];
-        const comments = elem.querySelectorAll('a[aria-expanded="false"]');
-        for (let comment of comments) {
-            comment.setAttribute("aria-expanded", 'true');
-        }
-        /*
-        Object.keys(comments).forEach((i) => {
-            comments[i].click()
-        });
-        */
+        let elem = $("article");
+        elem.find("[aria-expanded='false']").click();
         var observer = new MutationObserver(function (MutationRecords, MutationObserver) {
-            const comments = elem.querySelectorAll('a[aria-expanded="false"]');
-            for (let comment of comments) {
-                comment.setAttribute("aria-expanded", 'true');
-            }
-            /*
-            Object.keys(comments).forEach((i) => {
-                comments[i].click()
-            });
-            */
+            elem.find("[aria-expanded='false']").click();
         });
         observer.observe(document, {
             childList: true,
             subtree: true,
         });
+        /*
+        const elem = document.getElementsByTagName("article")[0];
+        const comments = elem.querySelectorAll('a[aria-expanded="false"]')
+        for(let comment of comments){
+            comment.setAttribute("aria-expanded", 'true');
+        }
+
+        var observer = new MutationObserver(function (MutationRecords, MutationObserver) {
+            const comments = elem.querySelectorAll('a[aria-expanded="false"]')
+            for(let comment of comments){
+                comment.setAttribute("aria-expanded", 'true');
+            }
+
+        });
+        observer.observe(document, {
+            childList: true,
+            subtree: true,
+        });
+        */
     }
     setPopup(page, setting) {
         const popupUtil = new popupUtil_1.PopupUtil();
