@@ -1,7 +1,7 @@
 {
-  "name": "webpack_example",
+  "name": "PixivViewUtil",
   "version": "1.0.0",
-  "description": "This is a exmple about webpack.",
+  "description": "utility tools for pixiv",
   "main": "pixivViewUtil.userscript.js",
   "scripts": {
     "build": "webpack && webpack --config webpack.concat.js"
