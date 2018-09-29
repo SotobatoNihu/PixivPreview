@@ -2,18 +2,24 @@ import {Util} from './util'
 import {prop, pagetype} from "./enum";
 
 export class Page {
+
     URL: string
-    pagetype: any
+    pagetype: pagetype
     alloedFunclist: Array<any>
     siteImgMaxWidth: Number
-    private util: Util;
+     imgSelector:String
+    mangaSelector:String
+
+
+
 
     constructor(url) {
-        this.util = new Util();
         this.URL = url;
         this.pagetype = Util.checkPageType(url);
-        this.siteImgMaxWidth = this.pagetype === prop.popup_typeA ? 200 : 150
+        this.siteImgMaxWidth = 500 //this.pagetype === prop.popup_typeA ? 200 : 150
         this.alloedFunclist = Util.getAllowedFuncList(this.pagetype);
+        this.imgSelector='a[href*="member_illust.php?mode=medium&illust_id="]'
+        this.mangaSelector='a[href*="member_illust.php?mode=medium&illust_id="] > div:nth-child(2) '
     }
 
     set setURL(url) {
@@ -21,9 +27,6 @@ export class Page {
         this.pagetype = Util.checkPageType(url);
     }
 
-    get getPagetype() {
-        return this.pagetype;
-    }
 
     get getURL() {
         return this.URL;
@@ -36,4 +39,8 @@ export class Page {
     isEnable(elem): boolean {
         return this.alloedFunclist.indexOf(elem) > -1;
     }
+    get getPagetype() {
+        return this.pagetype;
+    }
+
 }

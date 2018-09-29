@@ -10,7 +10,8 @@ const setting_js_1 = require("./lib/setting.js");
  */
 const init = async () => {
     const default_setting = {
-        changeLayout: true,
+        changeIllustPageLayout: true,
+        changeMemberPageLayout: true,
         openComment: true,
         popup: true
     };
@@ -23,9 +24,9 @@ const init = async () => {
 let page = new page_js_1.Page(document.URL);
 let util = new util_js_1.Util();
 let setting;
-init().then(result => setting = new setting_js_1.Setting(result));
-window.onload = () => {
-    //set popup function
+init().then(result => {
+    setting = new setting_js_1.Setting(result);
+    //$(document).ready(function(){
     console.log("popup set");
     if (setting.popup && page.isEnable(enum_1.prop.popup_typeA)) {
         util.setPopup(page, setting);
@@ -35,14 +36,27 @@ window.onload = () => {
         util.setPopup(page, setting);
         console.log("popup  B is enable");
     }
+    if (setting.changeMemberPageLayout && page.isEnable(enum_1.prop.changeMemberPageLayout)) {
+        const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
+        document.getElementById("root").appendChild(autherElem);
+        console.log("layout chainged");
+    }
+});
+//})
+window.onload = () => {
     console.log("pagetype:" + page.pagetype.toString());
-    if (util_js_1.Util.changeLayout && page.isEnable(enum_1.prop.changeLayout)) {
-        util_js_1.Util.changeLayout();
+    if (setting.changeIllustPageLayout && page.isEnable(enum_1.prop.changeIllustPageLayout)) {
+        util_js_1.Util.changeIllustPageLayout();
         console.log("layout chainged");
     }
     if (setting.openComment && page.isEnable(enum_1.prop.openComment)) {
-        util.openComment();
+        util.openComment(page);
         console.log("comment opend");
+    }
+    if (setting.changeMemberPageLayout && page.pagetype === enum_1.pagetype.member_illust) {
+        const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
+        document.getElementById("root").appendChild(autherElem);
+        console.log("layout chainged");
     }
     //change layout and open comment
     const links = document.getElementsByTagName("a");
@@ -50,12 +64,16 @@ window.onload = () => {
         link.addEventListener("click", () => {
             let page = new page_js_1.Page(document.URL);
             console.log("pagetype:" + page.pagetype.toString());
-            if (util_js_1.Util.changeLayout && page.isEnable(enum_1.prop.changeLayout)) {
-                util_js_1.Util.changeLayout();
+            if (setting.changeIllustPageLayout && page.isEnable(enum_1.prop.changeIllustPageLayout)) {
+                util_js_1.Util.changeIllustPageLayout();
                 console.log("layout chainged.");
             }
+            if (setting.changeMemberPageLayout && page.pagetype === enum_1.pagetype.member_illust) {
+                const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
+                document.getElementById("root").appendChild(autherElem);
+            }
             if (setting.openComment && page.isEnable(enum_1.prop.openComment)) {
-                util.openComment();
+                util.openComment(page);
                 console.log("comment opend.");
             }
         });

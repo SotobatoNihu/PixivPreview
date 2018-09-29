@@ -1,5 +1,6 @@
 export enum prop {
-    changeLayout,
+    changeIllustPageLayout,
+    changeMemberPageLayout,
     popup_typeA,
     popup_typeB,
     openComment,

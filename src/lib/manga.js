@@ -12,6 +12,7 @@ class Manga {
         this.lastImgId = " ";
         this.siteImgMaxWidth = 150; //for now it is used for pagetype==7
         this.mangaWidth = 1200;
+        this.pageNum = 0;
         this.imgsArr = [];
         this.DELTASCALE = ('mozInnerScreenX' in window) ? 70 : 4;
     }
