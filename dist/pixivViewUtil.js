@@ -1,3 +1,26 @@
+// ==UserScript==
+// @name            Pixiv View Util
+// @namespace       Pixiv View Util
+// @description     change the layout of caption. open comments automatically. add popup tool.
+// @author          sotoba
+// @match           https://www.pixiv.net/bookmark_new_illust.php*
+// @match           https://www.pixiv.net/discovery*
+// @match           https://www.pixiv.net/bookmark_detail.php?illust_id=*
+// @match           https://www.pixiv.net/bookmark_add.php?id=*
+// @match           https://www.pixiv.net/member_illust.php*
+// @match           https://www.pixiv.net/ranking.php?mode=*
+// @match           https://www.pixiv.net/member.php?id=*
+// @match           https://www.pixiv.net/bookmark.php*
+// @match           https://www.pixiv.net/search.php*
+// @match           https://www.pixiv.net*
+// @version         0.2.4-20180929
+// @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
+// @license         MIT License
+// @require         https://code.jquery.com/jquery-3.2.1.min.js
+// @grant           GM.getValue
+// @grant           GM.setValue
+// ==/UserScript==
+(() => {
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -772,3 +795,5 @@ window.onload = () => {
 
 /***/ })
 /******/ ]);
+}
+)();

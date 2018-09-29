@@ -1,12 +1,23 @@
-import {prop, pagetype} from "./enum";
+import {prop, pagetype, uiComponent} from "./enum";
 import {PopupUtil} from "./popupUtil";
 import {Manga} from "./manga";
+import {Page} from "./page";
+import {Setting} from "./setting";
+
+
+const getImageIDfromHref = (hrefElement: HTMLElement) => {
+    //https://www.pixiv.net/member_illust.php?mode=manga_big&illust_id=70384088&page=0
+    const pattern = /(.)+illust_id=([0-9]+)(&.+)?/
+    const matches = hrefElement.getAttribute('href').match(pattern)
+    const idString = matches[2]
+    return Number(idString)
+
+}
+
+
 
 export class Util {
-    static changeLayout() {
-        const figure = document.getElementsByTagName("figure");
-        $('figure').before($('figcaption'));
-    }
+
 
     //   function checkPageType(url) {
     static checkPageType(url) {
@@ -24,6 +35,29 @@ export class Util {
         else return pagetype.other;
     };
 
+    static changeIllustPageLayout() {
+        const figure = document.getElementsByTagName("figure");
+        $('figure').before($('figcaption'));
+    }
+    static changeMemberPageLayout() {
+        //const tagElem=$('.gm-profile-work-list-tag-list-click')
+        //const illustElem=tagElem.parent().parent().parent().parent()
+        //$('header').next().prepend(illustElem)
+       // $('nav').parent().parent().prepend(illustElem)
+        const h2Elems =$('h2')
+        for(const h2elem of h2Elems){
+            if(h2elem.innerText.startsWith("イラスト")){
+                const illustElem=$(h2elem).parent().parent()
+
+                //$('nav').parent().parent().prepend(illustElem)
+                $('header').next().prepend(illustElem)
+                break
+            }
+        }
+
+       // $('figure').before($('figcaption'));
+    }
+
     static getAllowedFuncList(type) {
         switch (type) {
             case pagetype.top:
@@ -33,9 +67,9 @@ export class Util {
             case pagetype.discovery:
                 return [prop.popup_typeA];
             case pagetype.member_illust:
-                return [prop.popup_typeB, prop.changeLayout, prop.openComment];
+                return [prop.popup_typeB, prop.changeIllustPageLayout, prop.openComment];
             case pagetype.member:
-                return [prop.popup_typeB];
+                return [prop.popup_typeB,prop.changeMemberPageLayout];
             case pagetype.bookmark_detail:
                 return [prop.popup_typeB];
             case pagetype.bookmark_add:
@@ -53,114 +87,67 @@ export class Util {
         }
     }
 
-    openComment() {
-        let elem = $("article");
-        elem.find("[aria-expanded='false']").click();
-        var observer = new MutationObserver(function (MutationRecords, MutationObserver) {
+    openComment(page: Page) {
+        if (page.getURL.indexOf('mode=medium') > 0) {
+
+            let elem = $("article");
             elem.find("[aria-expanded='false']").click();
-        });
-        observer.observe(document, {
-            childList: true,
-            subtree: true,
-        });
-        /*
-        const elem = document.getElementsByTagName("article")[0];
-        const comments = elem.querySelectorAll('a[aria-expanded="false"]')
-        for(let comment of comments){
-            comment.setAttribute("aria-expanded", 'true');
+            var observer = new MutationObserver(function (MutationRecords, MutationObserver) {
+                elem.find("[aria-expanded='false']").click();
+            });
+            observer.observe(document, {
+                childList: true,
+                subtree: true,
+            });
         }
-
-        var observer = new MutationObserver(function (MutationRecords, MutationObserver) {
-            const comments = elem.querySelectorAll('a[aria-expanded="false"]')
-            for(let comment of comments){
-                comment.setAttribute("aria-expanded", 'true');
-            }
-
-        });
-        observer.observe(document, {
-            childList: true,
-            subtree: true,
-        });
-        */
-
     }
 
-    setPopup(page, setting) {
+    setPopup(page: Page, setting: Setting) {
         const popupUtil = new PopupUtil();
         const captionContainer = popupUtil.getCaptionContainer()
         const outerContainer = popupUtil.getOuterContainer(document)
 
-
         document.body.appendChild(captionContainer);
         document.body.appendChild(outerContainer);
 
-        //add action
-        if (page.isEnable(prop.popup_typeA)) {
-            // click single art in the typeA page
-            $('body').on('mouseenter', popupUtil.getImgeSelector(prop.popup_typeA), function () {
-                let elem = this;
-                $(this).attr('onclick', 'console.log();return false;');
-                $(this).on('click', function () {
-                    popupUtil.popupImg(page, outerContainer, elem);
+        $('body').on('mouseenter', 'a[href*="member_illust.php?mode=medium&illust_id="]', function () {
 
-                    const href = $(this).parent().parent().find('a').attr('href');
-                    const imageID = href.substring(href.indexOf('illust_id=') + 'illust_id='.length);
-                    console.log("id:" + imageID)
-                    popupUtil.popupCaption(outerContainer, imageID);
-                });
+            const thumb = $(this).find('.non-trim-thumb')
+
+            const clickElem = thumb.length > 0 ? thumb[0] : this
+
+            $(this).attr('onclick', 'console.log();return false;');
+            $(this).find('.non-trim-thumb').attr('onclick', 'console.log();return false;');
+            const hrefElem: HTMLElement = this
+            const url = this.getAttribute("href")// .href //$(this).attr('href')
+
+            const pattern = /(.)+illust_id=([0-9]+)(&.+)?/
+            const matches = url.match(pattern)
+
+            const illustID = Number(matches[2])
+            // @ts-ignore
+            $(clickElem).on('click', function (e) {
+
+                fetch(`https://www.pixiv.net/ajax/illust/${illustID}`).then(function (response) {
+                    return response.json();
+                }).then(function (json) {
+                    const mouseX=e.pageX
+                    const mouseY=e.pageY
+
+                    if (!popupUtil.isManga(json)) {
+                        popupUtil.popupImg(page, outerContainer, hrefElem, json);
+                    } else {
+                        const pageNum = Util.getPageNum(json)
+                        popupUtil.popupManga(outerContainer, hrefElem, json, Number(pageNum));
+                    }
+                    popupUtil.popupCaption(outerContainer, json);
+                })
             })
-            //click manga in the typeA page
-            $('body').on('mouseenter', popupUtil.getMangaSelector(prop.popup_typeA), function () {
 
-                if (this.parentNode.firstChild.childNodes.length) {
-                    $(this).attr('onclick', 'console.log();return false;');
-                    var elem1 = this;
-                    var elem2 = this.parentNode.firstChild.firstChild.textContent;
-                    $(this).on('click', function () {
-                        popupUtil.popupManga(outerContainer, elem1, elem2);
-                        const href = $(this).parent().parent().find('a').attr('href');
-                        // @ts-ignore
-                        const imageID = href.slice(href.substring('illust_id=') + 'illust_id='.length);
-                        console.log("id:" + imageID)
-                        popupUtil.popupCaption(outerContainer, imageID);
-                    })
-                }
-            })
 
-        } else if (page.isEnable(prop.popup_typeB)) {
-            $('body').on('mouseenter', 'a[href*="member_illust.php?mode=medium&illust_id="]', function () {
-                if (this.childNodes.length == 1 && this.childNodes[0].nodeName == "DIV") {
-                    //single art
-                    var elem = this.firstChild.firstChild;
-                    var parent = this;
-                    $(this).attr('onclick', 'console.log();return false;');
+        })
 
-                    $(this).on('click', function () {
-                        popupUtil.popupImg(page, outerContainer, elem);
-                        // @ts-ignore
-                        const imageID = elem.getAttribute('data-id');
-                        popupUtil.popupCaption(outerContainer, imageID);
-                    });
-                }
-                else if (this.children[1] && this.children[1].className == 'page-count') {
-                    //manga
-                    const manga = new Manga();
 
-                    var elem1 = this.firstChild.firstChild;
-                    var elem2 = this.children[1].children[1].textContent;
-                    $(this).attr('onclick', 'console.log();return false;');
-                    $(this).on('click', function () {
-                        popupUtil.popupManga(outerContainer, elem1, elem2);
-                        var x = parseInt($(outerContainer).css('top'));
-                        var y = parseInt($(outerContainer).css('left'));
-                        // @ts-ignore
-                        const imageID = elem1.getAttribute('data-id');
-                        popupUtil.popupCaption(outerContainer, imageID);
-                    });
-                }
-
-            })
-        }
         const deleteAll = () => {
             const elem = document.getElementById('captionContainer')
             elem.innerText = null
@@ -169,13 +156,9 @@ export class Util {
             for (const child of children) {
                 child.style.display = 'none'
             }
-            outerContainer.style.display = 'none';
-
             outerContainer.textContent = null;
             outerContainer.style.display = 'none';
 
-
-            //return
         }
 
         outerContainer.onmouseleave = function () {
@@ -194,5 +177,18 @@ export class Util {
         window.onresize = function () {
             outerContainer.style.maxWidth = document.body.clientWidth - 80;
         };
+    }
+
+
+
+    private static getUserID(json: JSON) {
+        // @ts-ignore
+        return json.body.tags.authorId
+
+    }
+
+    private static getPageNum(json: JSON) {
+        // @ts-ignore
+        return Number(json.body.pageCount)
     }
 }

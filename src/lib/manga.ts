@@ -14,6 +14,7 @@ export class Manga {
     siteImgMaxWidth = 150 //for now it is used for pagetype==7
     mangaWidth = 1200
     bookmarkObj
+    pageNum=0
     imgsArr = []
     DELTASCALE = ('mozInnerScreenX' in window) ? 70 : 4
 
