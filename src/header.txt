@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Pixiv View Util
 // @namespace       Pixiv View Util
-// @description     change the layout of caption. open comments automatically. add popup tool.
+// @description     閲覧専用のユーティリティです。(1)各イラストの閲覧ページや作者ごとの画像一覧ページのレイアウトを変更します。(2)pixivサイト内でポップアップ機能を有効化します。this is  some  utility funcitions for pixiv.(1)change the layout of illust pages and auther's pages. (2)add popup tool.
 // @author          sotoba
 // @match           https://www.pixiv.net/bookmark_new_illust.php*
 // @match           https://www.pixiv.net/discovery*
@@ -13,11 +13,14 @@
 // @match           https://www.pixiv.net/bookmark.php*
 // @match           https://www.pixiv.net/search.php*
 // @match           https://www.pixiv.net*
-// @version         0.2.4-20180929
+// @version         0.3.7-20181007
 // @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
 // @license         MIT License
 // @require         https://code.jquery.com/jquery-3.2.1.min.js
+// @resource        gearIcon https://svgsilh.com/svg/24277.svg
 // @grant           GM.getValue
 // @grant           GM.setValue
+// @grant           GM.getResourceUrl
+// @grant           GM_getResourceText
 // ==/UserScript==
 (() => {

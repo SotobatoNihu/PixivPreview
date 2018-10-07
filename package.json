@@ -1,10 +1,11 @@
 {
-  "name": "webpack_example",
+  "name": "PixivViewUtil",
   "version": "1.0.0",
-  "description": "This is a exmple about webpack.",
+  "description": "utility tools for pixiv",
   "main": "pixivViewUtil.userscript.js",
   "scripts": {
-    "build": "webpack && webpack --config webpack.concat.js"
+    "dev": "webpack --mode development && webpack --config webpack.concat.js --mode development",
+    "build": "webpack --mode production && webpack --config webpack.concat.js --mode production"
   },
   "author": "sotoba",
   "license": "MIT",
@@ -19,6 +20,7 @@
     "webpack-concat-plugin": "^3.0.0"
   },
   "dependencies": {
+    "watch": "^1.0.2",
     "wrapper-webpack-plugin": "^2.0.0"
   }
 }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Pixiv View Util
 // @namespace       Pixiv View Util
-// @description     change the layout of caption. open comments automatically. add popup tool.
+// @description     閲覧専用のユーティリティです。(1)各イラストの閲覧ページや作者ごとの画像一覧ページのレイアウトを変更します。(2)pixivサイト内でポップアップ機能を有効化します。this is  some  utility funcitions for pixiv.(1)change the layout of illust pages and auther's pages. (2)add popup tool.
 // @author          sotoba
 // @match           https://www.pixiv.net/bookmark_new_illust.php*
 // @match           https://www.pixiv.net/discovery*
@@ -13,12 +13,15 @@
 // @match           https://www.pixiv.net/bookmark.php*
 // @match           https://www.pixiv.net/search.php*
 // @match           https://www.pixiv.net*
-// @version         0.2.4-20180929
+// @version         0.3.7-20181007
 // @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
 // @license         MIT License
 // @require         https://code.jquery.com/jquery-3.2.1.min.js
+// @resource        gearIcon https://svgsilh.com/svg/24277.svg
 // @grant           GM.getValue
 // @grant           GM.setValue
+// @grant           GM.getResourceUrl
+// @grant           GM_getResourceText
 // ==/UserScript==
 (() => {
 /******/ (function(modules) { // webpackBootstrap
@@ -89,7 +92,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = 8);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -150,15 +153,246 @@ var pagetype;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const enum_1 = __webpack_require__(0);
-const popupUtil_1 = __webpack_require__(4);
-const getImageIDfromHref = (hrefElement) => {
-    //https://www.pixiv.net/member_illust.php?mode=manga_big&illust_id=70384088&page=0
-    const pattern = /(.)+illust_id=([0-9]+)(&.+)?/;
-    const matches = hrefElement.getAttribute('href').match(pattern);
-    const idString = matches[2];
-    return Number(idString);
-};
+class Setting {
+    constructor() {
+        this.changeIllustPageLayout = true;
+        this.changeMemberPageLayout = true;
+        this.openComment = true;
+        this.popup = true;
+    }
+    async init() {
+        // @ts-ignore
+        await GM.getValue("pixiv_viewutil_setting").then(jsonString => {
+            if (jsonString !== undefined) {
+                const jsonData = JSON.parse(jsonString);
+                this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout;
+                this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
+                this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
+                this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+            }
+        });
+    }
+    set setStringData(jsonString) {
+        const jsonData = JSON.parse(jsonString);
+        this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout;
+        this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
+        this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
+        this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+        this.uiComponent = [enum_1.uiComponent.image, enum_1.uiComponent.manga, enum_1.uiComponent.caption];
+    }
+    set setData(jsonData) {
+        this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout;
+        this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
+        this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
+        this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+    }
+    get getJsonString() {
+        const obj = {
+            changeIllustPageLayout: this.changeIllustPageLayout,
+            changeMemberPageLayout: this.changeMemberPageLayout,
+            openComment: this.openComment,
+            popup: this.popup,
+        };
+        return JSON.stringify(obj);
+    }
+    save() {
+        // @ts-ignore
+        GM.setValue("pixiv_viewutil_setting", this.getJsonString);
+    }
+}
+exports.Setting = Setting;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class ContainerFactory {
+    constructor() {
+        this.id = '';
+        this.innerHtml = '';
+        this.innerText = '';
+        this.cssText = '';
+    }
+    setId(idString) {
+        this.id = idString;
+        return this;
+    }
+    setLeft(x) {
+    }
+    setTop(y) {
+    }
+    setWitdh(w) {
+        this.width = w;
+        return this;
+    }
+    setInnerHtml(elem) {
+        this.innerHtml = elem;
+        return this;
+    }
+    setInnerText(elem) {
+        this.innerText = elem;
+        return this;
+    }
+    createDiv() {
+        const elem = document.createElement('div');
+        elem.id = this.id;
+        elem.innerHTML = this.innerHtml;
+        elem.style.cssText = this.cssText;
+        return elem;
+    }
+    createImg() {
+        const elem = document.createElement('img');
+        elem.id = this.id;
+        elem.style.cssText = this.cssText;
+        return elem;
+    }
+    setVoidHtml() {
+        this.innerHtml = '';
+        return this;
+    }
+    createSpan() {
+        const elem = document.createElement('span');
+        elem.id = this.id;
+        elem.innerHTML = this.innerHtml;
+        elem.style.cssText = this.cssText;
+        return elem;
+    }
+    appendChild(infoElem) {
+        this.appendChild(infoElem);
+        return this;
+    }
+    setCSS(cssString) {
+        this.cssText = cssString;
+        return this;
+    }
+}
+exports.ContainerFactory = ContainerFactory;
+
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const enum_1 = __webpack_require__(0);
+const popupUtil_1 = __webpack_require__(6);
+const setting_1 = __webpack_require__(1);
+const ContainerFactory_1 = __webpack_require__(2);
+const jsonInterface_1 = __webpack_require__(4);
 class Util {
+    constructor() {
+        this.outerContainerCSS = `
+        position:absolute;
+        display:block;
+        z-index:1000;
+        border: 5px solid black;
+        max-width:${window.innerWidth * 0.8}px;
+        background-color:#111;
+        max-width:${window.innerWidth * 0.8}px;
+        max-height:${window.innerHeight * 0.8}px;
+        `;
+        this.gearCSS = `width: 25px; 
+         height: 25px;
+         color:rgb(173, 173, 173);
+         `;
+        this.modalCSS = `.pixiv-modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index:10000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+#pixiv-modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    z-index:10001;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+#pixiv-modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+#pixiv-modal-close :hover,
+#pixiv-modal-close :focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+        `;
+        /*
+         async loadSettingData(){
+            const default_setting = {
+                changeIllustPageLayout: true,
+                changeMemberPageLayout: true,
+                openComment: true,
+                popup: true
+            }
+            // @ts-ignore
+            return await GM.getValue("pixiv_viewutil_setting", JSON.stringify(default_setting));
+        }
+    
+        async saveSettingData(setting: Setting) {
+            // @ts-ignore
+            await GM.setValue("pixiv_viewutil_setting", setting);
+        }
+        */
+    }
+    async initExecute(setting, page) {
+        if (page.pagetype == enum_1.pagetype.top && document.getElementById('pixiv-view-util-gear') === null) {
+            this.setConfigScreen();
+        }
+        if (setting.popup && page.isEnable(enum_1.prop.popup_typeA)) {
+            this.setPopup(page, setting);
+            console.log("set popup typeA");
+        }
+        else if (setting.popup && page.isEnable(enum_1.prop.popup_typeB)) {
+            this.setPopup(page, setting);
+            console.log("set popup typeB");
+        }
+        if (setting.changeMemberPageLayout && page.isEnable(enum_1.prop.changeMemberPageLayout)) {
+            const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
+            document.getElementById("root").appendChild(autherElem);
+            console.log("layout chainged");
+        }
+    }
+    onloadExecute(setting, page) {
+        if (page.pagetype === enum_1.pagetype.top && document.getElementById('pixiv-view-util-gear') === null) {
+            this.setConfigScreen();
+        }
+        if (setting.changeIllustPageLayout && page.isEnable(enum_1.prop.changeIllustPageLayout)) {
+            Util.changeIllustPageLayout();
+            console.log("layout chainged");
+        }
+        if (setting.openComment && page.isEnable(enum_1.prop.openComment)) {
+            this.openComment(page);
+            console.log("comment opend");
+        }
+        if (setting.changeMemberPageLayout && page.pagetype === enum_1.pagetype.member_illust) {
+            const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
+            document.getElementById("root").appendChild(autherElem);
+            console.log("layout chainged");
+        }
+    }
     //   function checkPageType(url) {
     static checkPageType(url) {
         if (url.match('https://www.pixiv.net/bookmark_new_illust.php?'))
@@ -188,10 +422,10 @@ class Util {
     }
     ;
     static changeIllustPageLayout() {
-        const figure = document.getElementsByTagName("figure");
         $('figure').before($('figcaption'));
     }
     static changeMemberPageLayout() {
+        // TODO もっと良い方法
         //const tagElem=$('.gm-profile-work-list-tag-list-click')
         //const illustElem=tagElem.parent().parent().parent().parent()
         //$('header').next().prepend(illustElem)
@@ -205,7 +439,6 @@ class Util {
                 break;
             }
         }
-        // $('figure').before($('figcaption'));
     }
     static getAllowedFuncList(type) {
         switch (type) {
@@ -250,106 +483,193 @@ class Util {
     }
     setPopup(page, setting) {
         const popupUtil = new popupUtil_1.PopupUtil();
-        const captionContainer = popupUtil.getCaptionContainer();
-        const outerContainer = popupUtil.getOuterContainer(document);
-        document.body.appendChild(captionContainer);
+        const factory = new ContainerFactory_1.ContainerFactory();
+        const outerContainer = factory.setId('outerContainer')
+            .setCSS(this.outerContainerCSS)
+            .setVoidHtml()
+            .createDiv();
         document.body.appendChild(outerContainer);
+        // イラスト＆漫画のクリックイベントを登録する
         $('body').on('mouseenter', 'a[href*="member_illust.php?mode=medium&illust_id="]', function () {
             const thumb = $(this).find('.non-trim-thumb');
             const clickElem = thumb.length > 0 ? thumb[0] : this;
+            //イラストのクリックを抑制
             $(this).attr('onclick', 'console.log();return false;');
+            //漫画のクリックを抑制
             $(this).find('.non-trim-thumb').attr('onclick', 'console.log();return false;');
             const hrefElem = this;
-            const url = this.getAttribute("href"); // .href //$(this).attr('href')
-            const pattern = /(.)+illust_id=([0-9]+)(&.+)?/;
-            const matches = url.match(pattern);
+            const url = this.getAttribute("href");
+            const matches = url.match(/(.)+illust_id=([0-9]+)(&.+)?/);
             const illustID = Number(matches[2]);
-            // @ts-ignore
             $(clickElem).on('click', function (e) {
                 fetch(`https://www.pixiv.net/ajax/illust/${illustID}`).then(function (response) {
                     return response.json();
                 }).then(function (json) {
-                    const mouseX = e.pageX;
-                    const mouseY = e.pageY;
-                    if (!popupUtil.isManga(json)) {
-                        popupUtil.popupImg(page, outerContainer, hrefElem, json);
+                    const pixivJson = new jsonInterface_1.PixivJson(json);
+                    // const mouseX=e.pageX
+                    //const mouseY=e.pageY
+                    if (!popupUtil.isManga(pixivJson)) {
+                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
                     }
                     else {
-                        const pageNum = Util.getPageNum(json);
-                        popupUtil.popupManga(outerContainer, hrefElem, json, Number(pageNum));
+                        const pageNum = Util.getPageNum(pixivJson);
+                        popupUtil.popupManga(outerContainer, hrefElem, pixivJson, Number(pageNum));
                     }
-                    popupUtil.popupCaption(outerContainer, json);
+                    popupUtil.popupCaption(outerContainer, pixivJson);
                 });
             });
         });
         const deleteAll = () => {
             const elem = document.getElementById('captionContainer');
-            elem.innerText = null;
-            elem.style.display = 'none';
-            const children = outerContainer.children;
-            for (const child of children) {
-                child.style.display = 'none';
+            if (elem !== null) {
+                elem.parentNode.removeChild(elem);
             }
             outerContainer.textContent = null;
             outerContainer.style.display = 'none';
         };
         outerContainer.onmouseleave = function () {
-            if ($(captionContainer).find('a').length == 0) {
+            const elem = document.getElementById('captionContainer').innerHTML;
+            if ($(elem).find('a').length == 0) {
                 deleteAll();
             }
             else {
                 setTimeout(deleteAll(), 1000);
             }
         };
-        captionContainer.onmouseleave = function () {
-            captionContainer.innerText = null;
-            captionContainer.style.display = 'none';
-        };
         window.onresize = function () {
-            outerContainer.style.maxWidth = document.body.clientWidth - 80;
+            outerContainer.style.maxWidth = `${window.innerWidth * 0.8}px`;
         };
     }
     static getUserID(json) {
-        // @ts-ignore
         return json.body.tags.authorId;
     }
     static getPageNum(json) {
-        // @ts-ignore
         return Number(json.body.pageCount);
+    }
+    async setConfigScreen() {
+        const iconID = 'pixiv-view-util-icon';
+        const iconElem = document.getElementById(iconID);
+        if (iconElem === null) {
+            await this.setIconElem(iconID);
+            await this.setModal(iconID);
+        }
+    }
+    async setIconElem(iconID) {
+        // @ts-ignore
+        const gearIcon = await GM_getResourceText('gearIcon');
+        const factory = new ContainerFactory_1.ContainerFactory();
+        const gearElem = factory
+            .setId(iconID)
+            .setCSS(this.gearCSS)
+            .setInnerHtml(gearIcon)
+            .createDiv();
+        gearElem.className = 'trigger';
+        const svgTag = gearElem.getElementsByTagName('svg')[0];
+        const gTag = gearElem.getElementsByTagName('g')[0];
+        svgTag.setAttribute('width', '25');
+        svgTag.setAttribute('height', '25');
+        gTag.setAttribute('fill', '#BECAD8');
+        const liElem = document.createElement('li');
+        liElem.className = 'viewUtil';
+        liElem.appendChild(gearElem);
+        document.body.getElementsByClassName('notifications')[0].appendChild(liElem);
+    }
+    setModal(iconID) {
+        const setting = new setting_1.Setting;
+        const iconElem = document.getElementById(iconID);
+        const modal1 = document.createElement('div');
+        modal1.innerHTML =
+            `  
+<div id="myModal" class="pixiv-modal">
+  <div id="pixiv-modal-content" >
+    <span id="pixiv-modal-close" >OK</span>
+    <p>Setting:</p>
+    <div id="pixiv-set-IllustPageLayout">
+    Modify the illust page's layout
+        <input type="radio"  name='pixivutil-setting1' id="pixivutil-setting1-yes" value="1"  />
+        <label for="dummy_1" data-label="ON">ON</label>
+        <input type="radio"  name='pixivutil-setting1' id="pixivutil-setting1-no" value="0" checked />
+        <label for="dummy_0" data-label="OFF">OFF</label>
+    </div>
+    <div id="pixiv-set-MemberPageLayout">
+     Modify the author page's layout
+        <input type="radio"  name='pixivutil-setting2' id="pixivutil-setting2-yes" value="1"  />
+        <label for="dummy_1" data-label="ON">ON</label>
+        <input type="radio"  name='pixivutil-setting2' id="pixivutil-setting2-no" value="0" checked/>
+        <label for="dummy_0" data-label="OFF">OFF</label>
+    </div>
+    <div id="pixiv-set-Popup">
+     Use popup function
+        <input type="radio"  name='pixivutil-setting3' id="pixivutil-setting3-yes" value="1" />
+        <label for="dummy_1" data-label="ON">ON</label>
+        <input type="radio"  name='pixivutil-setting3' id="pixivutil-setting3-no" value="0" checked />
+        <label for="dummy_0" data-label="OFF">OFF</label>
+    </div>
+  </div>
+</div>
+	`;
+        document.body.appendChild(modal1);
+        // 各modalクラスのcssを追加
+        const style = document.createElement('style');
+        style.textContent = this.modalCSS;
+        document.getElementsByTagName('head')[0].appendChild(style);
+        //各種クリックイベントを追加
+        const modal = document.getElementById('myModal');
+        const closeButton = document.getElementById('pixiv-modal-close');
+        iconElem.onclick = () => modal.style.display = 'block';
+        const elem1 = document.getElementsByName('pixivutil-setting1')[0];
+        const elem2 = document.getElementsByName('pixivutil-setting2')[0];
+        const elem3 = document.getElementsByName('pixivutil-setting3')[0];
+        setting.init().then(() => {
+            // @ts-ignore
+            if (setting.changeIllustPageLayout && !elem1.checked)
+                elem1.checked = true;
+            // @ts-ignore
+            if (setting.changeMemberPageLayout && !elem2.checked)
+                elem2.checked = true;
+            // @ts-ignore
+            if (setting.popup && !elem3.checked)
+                elem3.checked = true;
+        });
+        closeButton.onclick = () => {
+            modal.style.display = 'none';
+            // @ts-ignore
+            setting.changeIllustPageLayout = elem1.checked;
+            // @ts-ignore
+            setting.changeMemberPageLayout = elem2.checked;
+            // @ts-ignore
+            setting.popup = elem3.checked;
+            setting.save();
+        };
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
+        // .addEventListener("click", windowOnClick);
     }
 }
 exports.Util = Util;
 
 
 /***/ }),
-/* 2 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+// http://json2ts.com/
 Object.defineProperty(exports, "__esModule", { value: true });
-const enum_1 = __webpack_require__(0);
-class Setting {
-    constructor(jsonString) {
-        const jsonData = JSON.parse(jsonString);
-        this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout;
-        this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
-        this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
-        this.popup = (jsonData.popup == null) ? true : jsonData.popup;
-        this.uiComponent = [enum_1.uiComponent.image, enum_1.uiComponent.manga, enum_1.uiComponent.caption];
-    }
-    set setData(jsonData) {
-        this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout;
-        this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
-        this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
-        this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+class PixivJson {
+    constructor(json) {
+        Object.assign(this, json);
     }
 }
-exports.Setting = Setting;
+exports.PixivJson = PixivJson;
 
 
 /***/ }),
-/* 3 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -382,16 +702,18 @@ exports.Manga = Manga;
 
 
 /***/ }),
-/* 4 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const manga_1 = __webpack_require__(3);
+const manga_1 = __webpack_require__(5);
 const enum_1 = __webpack_require__(0);
+const ContainerFactory_1 = __webpack_require__(2);
 class PopupUtil {
     constructor() {
+        // icon images
         this.likeIcon = `<img src="https://s.pximg.net/www/js/spa/260127df5fe9ade778ec4be463deaf01.svg" width="12" height="12">`;
         this.bookmarkIcon = `<svg viewBox="0 0 12 12" width="12" height="12" class="css-1hamw6p e1rs6xf14"><path fill="currentColor" d="
         M9,0.75 C10.6568542,0.75 12,2.09314575 12,3.75 C12,6.68851315 10.0811423,9.22726429 6.24342696,11.3662534
@@ -399,99 +721,55 @@ class PopupUtil {
         C1.9188595,9.22726671 0,6.68851455 0,3.75 C1.1324993e-16,2.09314575 1.34314575,0.75 3,0.75
         C4.12649824,0.75 5.33911281,1.60202454 6,2.66822994 C6.66088719,1.60202454 7.87350176,0.75 9,0.75 Z"></path></svg>`;
         this.viewIcon = `<img src="https://s.pximg.net/www/js/spa/af74d092363c09fd06441a4ab04c9331.svg" width="14" height="12">`;
+        //css strings
+        this.mangaContainerCSS = `display:block;
+            background-color:black;
+            overflow-x:auto;
+            white-space:nowrap;
+            `;
+        this.imgContainerCSS = `width: auto; 
+            height:auto;
+            display:block;
+            `;
+        this.infoContainerCSS = `font-size: 12px; 
+            color:rgb(173, 173, 173); 
+            line-height=1;`;
     }
-    getImgContainer() {
-        let imgContainer = document.createElement('div');
-        imgContainer.id = 'imgContainer';
-        //imgContainer.style.position='absolute'
-        imgContainer.style.display = 'block';
-        imgContainer.style.zIndex = '1000';
-        imgContainer.style.backgroundColor = '#222';
-        imgContainer.style.maxWidth = '1200px';
-        imgContainer.style.whiteSpace = 'nowrap';
-        imgContainer.style.padding = '5px';
-        imgContainer.style.margin = '5px';
-        imgContainer.style.maxWidth == window.innerHeight * 0.7 + 'px';
-        imgContainer.style.width = 'auto';
-        imgContainer.style.maxHeight = window.innerHeight * 0.7 + 'px';
-        imgContainer.style.height = 'auto';
-        return imgContainer;
-    }
-    getImageElement() {
-        let popupImg = document.createElement('img');
-        popupImg.id = 'popupImg';
-        popupImg.style.maxWidth = window.innerWidth * 0.7 + 'px';
-        popupImg.style.width = 'auto';
-        popupImg.style.maxHeight = window.innerHeight * 0.7 + 'px';
-        popupImg.style.height = 'auto';
-        return popupImg;
-    }
-    getMangaContainer(document) {
-        let mangaContainer = document.createElement('div');
-        mangaContainer.id = 'mangaContainer';
-        mangaContainer.style.display = 'block';
-        mangaContainer.style.zIndex = '1500';
-        mangaContainer.style.backgroundColor = '#111';
-        mangaContainer.style.overflowX = 'auto';
-        //mangaContainer.style.maxWidth = '1200px'
-        mangaContainer.style.top = '0px';
-        mangaContainer.style.left = '0px';
-        mangaContainer.style.whiteSpace = 'nowrap';
-        // mangaContainer.style.maxWidth = window.innerWidth * 0.5 + 'px';
-        //mangaContainer.style.width = 'auto';
-        //mangaContainer.style.maxHeight = window.innerHeight * 0.5 + 'px';
-        //mangaContainer.style.height = 'auto';
-        return mangaContainer;
-    }
-    getOuterContainer(document) {
-        let tmp = document.createElement('div');
-        document.body.appendChild(tmp);
-        let outerContainer = document.createElement('div');
-        outerContainer.id = 'outerContainer';
-        tmp.appendChild(outerContainer);
-        outerContainer.style.position = 'absolute';
-        outerContainer.style.display = 'block';
-        outerContainer.style.zIndex = '1000';
-        outerContainer.style.padding = '5px';
-        outerContainer.style.backgroundColor = '#111';
-        outerContainer.style.left = '0px';
-        outerContainer.style.left = '0px';
-        outerContainer.style.maxWidth = window.innerWidth * 0.7 + 'px';
-        outerContainer.style.maxHeight = window.innerHeight * 0.7 + 'px';
-        // uterContainer.style.marginLeft
-        // uterContainer.style.marginTop
-        return outerContainer;
-    }
-    getCaptionContainer() {
-        let captionContainer = document.createElement('div');
-        captionContainer.id = 'captionContainer';
-        captionContainer = document.createElement('div');
-        captionContainer.style.whiteSpace = 'nowrap';
-        captionContainer.style.display = 'block';
-        captionContainer.style.zIndex = '1001';
-        captionContainer.style.position = 'absolute';
-        captionContainer.style.padding = '5px';
-        captionContainer.style.maxWidth = window.innerWidth * 0.7 + 'px';
-        captionContainer.style.top = '0px';
-        captionContainer.style.left = '0px';
-        captionContainer.style.backgroundColor = '#FFF';
-        return captionContainer;
+    captionContainerCSS(outerContainer) {
+        return `
+        white-space:pre-wrap;
+        display:block;
+        z-index:1001;
+        position:absolute;
+        border: 1px solid black;
+        max-width:${outerContainer.clientWidth + 10}px;
+        background-color:white;
+        word-wrap:break-word;
+        word-break:break-all;
+        left:${outerContainer.style.left}px;
+        width:${outerContainer.clientWidth + 10}px;
+        `;
     }
     popupImg(page, outerContainer, elem, json) {
-        const children = outerContainer.children;
-        for (const child of children) {
-            child.style.display = 'none';
-        }
         outerContainer.textContent = null;
-        const imgContainer = this.getImgContainer();
-        outerContainer.appendChild(imgContainer);
-        const imgElement = this.getImageElement();
-        imgContainer.appendChild(imgElement);
-        // @ts-ignore
+        const factory = new ContainerFactory_1.ContainerFactory();
+        const imgElement = factory.setId('popupImg')
+            .setVoidHtml()
+            .setCSS(this.imgContainerCSS)
+            .createImg();
+        outerContainer.appendChild(imgElement);
+        imgElement.src = this.getImgUrl(json);
+        if ($(elem).hasClass("on")) {
+            outerContainer.style.border = '5px solid rgb(255, 64, 96)';
+            // $(outerContainer).css("background", "rgb(255, 64, 96)");
+        }
+        else {
+            outerContainer.style.border = '5px solid rgb(34, 34, 34)';
+            //$(outerContainer).css("background", "rgb(34, 34, 34)");
+        }
         let imgHeight = Number(json.body.height);
-        // @ts-ignore
         let imgWidth = Number(json.body.width);
-        if (imgHeight > window.innerHeight * 0.6 || imgWidth > window.innerWidth * 0.6) {
+        if (imgHeight > window.innerHeight * 0.8 || imgWidth > window.innerWidth * 0.8) {
             const heightScale = imgHeight / (window.innerHeight * 0.8);
             const widthScale = imgWidth / (window.innerWidth * 0.8);
             if (heightScale > widthScale) {
@@ -503,22 +781,16 @@ class PopupUtil {
                 imgWidth = (imgWidth / widthScale);
             }
         }
-        imgElement.src = this.getImgUrl(json);
-        if ($(elem).hasClass("on")) {
-            $(outerContainer).css("background", "rgb(255, 64, 96)");
-        }
-        else {
-            $(outerContainer).css("background", "rgb(34, 34, 34)");
-        }
-        $(outerContainer).width(imgWidth + 'px');
-        $(outerContainer).height(imgHeight + 'px');
+        // display container
+        imgElement.style.width = `${imgWidth}px`;
+        imgElement.style.height = `${imgHeight}px`;
+        outerContainer.style.width = `${imgWidth}px`;
+        outerContainer.style.height = `${imgHeight}px`;
+        outerContainer.style.display = 'block';
+        //set container
         const offset = this.getOffset(outerContainer);
         outerContainer.style.top = offset.top + 'px';
         outerContainer.style.left = offset.left + 'px';
-        imgContainer.style.display = 'block';
-        outerContainer.style.display = 'block';
-        //imgContainer.style.display = 'block';
-        //outerContainer.style.display = 'block';
     }
     getOffset(outerContainer) {
         const w_height = $(window).height();
@@ -531,69 +803,59 @@ class PopupUtil {
         return { top: Math.round(position_h), left: Math.round(position_w) };
     }
     popupCaption(outerContainer, json) {
-        // @ts-ignore
-        //const likeIcon = await GM.getResourceUrl("likeIcon");
-        let tmpElem = this.getCaptionContainer();
-        const id = 'captionContainer';
-        let captionContainer;
-        if (document.getElementById(id) != null) {
-            captionContainer = document.getElementById(id);
-            captionContainer.innerText = null;
-            captionContainer.style.display = 'none';
-        }
-        else {
-            captionContainer = tmpElem;
-            captionContainer.id = id;
-            $(captionContainer).insertBefore(outerContainer);
-        }
-        captionContainer.style.left = outerContainer.style.left;
-        let textElem = document.createElement('div');
-        textElem.id = "popup-caption-text";
-        // @ts-ignore
-        textElem.innerHTML = json.body.description;
-        captionContainer.appendChild(textElem);
-        let dateElem = document.createElement('div');
-        dateElem.id = "popup-caption-date";
-        // @ts-ignore
+        const factory = new ContainerFactory_1.ContainerFactory();
+        const captionId = 'captionContainer';
+        this.deleteElementById(captionId);
+        const descriptionString = json.body.description;
+        const descriptionElem = factory.setId('popup-caption-text')
+            .setInnerHtml(descriptionString)
+            .createDiv();
         const date = new Date(json.body.createDate);
-        dateElem.innerHTML = `upload:${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes()}`;
-        let infoElem = document.createElement('div');
-        let likeElem = document.createElement('span');
-        // @ts-ignore
-        likeElem.innerHTML = `${this.likeIcon} ${json.body.likeCount} `;
-        let bookmarkElem = document.createElement('span');
-        // @ts-ignore
-        bookmarkElem.innerHTML = `${this.bookmarkIcon} ${json.body.bookmarkCount} `;
-        let viewElem = document.createElement('span');
-        viewElem.id = "popup-caption-view";
-        // @ts-ignore
-        viewElem.innerHTML = `${this.viewIcon}${json.body.viewCount}`;
+        const dateString = `upload:${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+        const dateElem = factory.setId('popup-caption-date').setInnerHtml(dateString).createDiv();
+        const likeString = `${this.likeIcon} ${json.body.likeCount} `;
+        const likeElem = factory.setId('popup-caption-like').setInnerHtml(likeString).createSpan();
+        const bookmarkString = `${this.bookmarkIcon} ${json.body.bookmarkCount} `;
+        const bookmarkElem = factory.setId('popup-caption-bookmark').setInnerHtml(bookmarkString).createSpan();
+        const viewString = `${this.viewIcon}${json.body.viewCount}`;
+        const viewElem = factory.setId('popup-caption-view').setInnerHtml(viewString).createSpan();
+        const infoElem = factory
+            .setId('popup-caption-infomation')
+            .setVoidHtml()
+            .setCSS(this.infoContainerCSS)
+            .createDiv();
         infoElem.appendChild(dateElem);
         infoElem.appendChild(likeElem);
         infoElem.appendChild(bookmarkElem);
         infoElem.appendChild(viewElem);
+        const captionContainer = factory.setId(captionId)
+            .setCSS(this.captionContainerCSS(outerContainer))
+            .setVoidHtml()
+            .createDiv();
+        captionContainer.appendChild(descriptionElem);
         captionContainer.appendChild(infoElem);
-        infoElem.style.fontSize = '12px';
-        infoElem.style.color = 'rgb(173, 173, 173)';
-        infoElem.style.lineHeight = '1';
-        captionContainer.style.display = 'block';
-        captionContainer.style.width = outerContainer.clientWidth + 'px';
-        // @ts-ignore
-        captionContainer.style.width = `${Number(json.body.width) / 2}px`;
-        captionContainer.style.backgroundColor = 'white';
-        captionContainer.style.wordWrap = 'break-word';
-        captionContainer.style.wordBreak = 'break-all';
-        captionContainer.style.whiteSpace = 'normal';
-        const y = parseInt(outerContainer.style.top) - parseInt(captionContainer.getBoundingClientRect().height);
+        outerContainer.parentNode.insertBefore(captionContainer, outerContainer);
+        const y = parseInt(outerContainer.style.top) - captionContainer.getBoundingClientRect().height;
         captionContainer.style.top = y + 'px';
-        //  });
+        captionContainer.style.left = outerContainer.style.left;
+    }
+    deleteElementById(id) {
+        const elem = document.getElementById(id);
+        if (elem != null) {
+            elem.parentNode.removeChild(elem);
+        }
     }
     popupManga(outerContainer, hrefElem, json, count) {
-        const mangaContainer = this.getMangaContainer(document);
+        const factory = new ContainerFactory_1.ContainerFactory();
+        const mangaContainer = factory.setId('mangaContainer')
+            .setVoidHtml()
+            .setCSS(this.mangaContainerCSS)
+            .createDiv();
+        //this.getMangaContainer(document)
         outerContainer.appendChild(mangaContainer);
         const manga = new manga_1.Manga();
-        const children = outerContainer.children;
-        for (const child of children) {
+        // outerContainer.children.forEach(child =>child.style.display = 'none')
+        for (const child of outerContainer.children) {
             child.style.display = 'none';
         }
         if ($(hrefElem).hasClass("on")) {
@@ -603,20 +865,17 @@ class PopupUtil {
             $(outerContainer).css("background", "rgb(34, 34, 34)");
         }
         this.imgsArrInit(outerContainer, mangaContainer, manga, this.getImgUrl(json), count);
-        $(outerContainer).width(outerContainer.style.maxWidth);
-        $(outerContainer).height(outerContainer.style.maxHeight);
+        outerContainer.style.width = outerContainer.style.maxWidth;
+        outerContainer.style.height = outerContainer.style.maxHeight;
         const offset = this.getOffset(outerContainer);
-        outerContainer.style.top = offset.top + 'px';
-        outerContainer.style.left = offset.left + 'px';
+        outerContainer.style.top = `${offset.top}px`;
+        outerContainer.style.left = `${offset.left}px`;
         mangaContainer.style.display = 'block';
         outerContainer.style.display = 'block';
         this.setScrool(outerContainer, mangaContainer, manga);
     }
     getImgUrl(json) {
-        // return json.body.urls.regular
-        //// let url = $(elem).find('img').attr('src')
         //url = url.replace(/\/...x...\//, '/600x600/'); //both feed and artist works case | TODO: '1200x1200' variant
-        // @ts-ignore
         return json.body.urls.regular.replace(/\/...x...\//, '/600x600/');
     }
     imgsArrInit(outerContainer, mangaContainer, manga, primaryLink, pageNum) {
@@ -630,13 +889,6 @@ class PopupUtil {
             manga.imgsArr[i].style.height = outerContainer.style.maxHeight;
             manga.imgsArr[i].style.width = 'auto';
         }
-    }
-    getImageIDfromString(str) {
-        //example:https://www.pixiv.net/member_illust.php?mode=manga_big&illust_id=70384088&page=0
-        const pattern = /(.)+illust_id=([0-9]+)(&.+)?/;
-        const matches = str.match(pattern);
-        const idString = matches[2];
-        return Number(idString);
     }
     setScrool(outerContainer, mangaContainer, manga) {
         mangaContainer.onwheel = function (e) {
@@ -660,21 +912,20 @@ class PopupUtil {
         return $(elem).parent().find('a')[0];
     }
     isManga(json) {
-        // @ts-ignore
-        return json.body.illustType === '1' || (json.body.pageCount && Number(json.body.pageCount) > 1);
+        return json.body.illustType === 1 || (json.body.pageCount && Number(json.body.pageCount) > 1);
     }
 }
 exports.PopupUtil = PopupUtil;
 
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const util_1 = __webpack_require__(1);
+const util_1 = __webpack_require__(3);
 class Page {
     constructor(url) {
         this.URL = url;
@@ -705,91 +956,39 @@ exports.Page = Page;
 
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const page_js_1 = __webpack_require__(5);
-const enum_1 = __webpack_require__(0);
-const util_js_1 = __webpack_require__(1);
-const setting_js_1 = __webpack_require__(2);
+const page_1 = __webpack_require__(7);
+const util_1 = __webpack_require__(3);
+const setting_1 = __webpack_require__(1);
 'use strict';
 /*
 設定画面やsave & load 機能を実装予定
  */
-const init = async () => {
-    const default_setting = {
-        changeIllustPageLayout: true,
-        changeMemberPageLayout: true,
-        openComment: true,
-        popup: true
-    };
-    // @ts-ignore
-    return await GM.getValue("pixiv_viewutil_setting", JSON.stringify(default_setting));
-};
 /*
 * main function
 */
-let page = new page_js_1.Page(document.URL);
-let util = new util_js_1.Util();
-let setting;
-init().then(result => {
-    setting = new setting_js_1.Setting(result);
-    //$(document).ready(function(){
-    console.log("popup set");
-    if (setting.popup && page.isEnable(enum_1.prop.popup_typeA)) {
-        util.setPopup(page, setting);
-        console.log("popup  A is enable");
-    }
-    else if (setting.popup && page.isEnable(enum_1.prop.popup_typeB)) {
-        util.setPopup(page, setting);
-        console.log("popup  B is enable");
-    }
-    if (setting.changeMemberPageLayout && page.isEnable(enum_1.prop.changeMemberPageLayout)) {
-        const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
-        document.getElementById("root").appendChild(autherElem);
-        console.log("layout chainged");
-    }
+const page = new page_1.Page(document.URL);
+const util = new util_1.Util();
+const setting = new setting_1.Setting();
+setting.init().then(() => {
+    util.initExecute(setting, page);
 });
-//})
 window.onload = () => {
     console.log("pagetype:" + page.pagetype.toString());
-    if (setting.changeIllustPageLayout && page.isEnable(enum_1.prop.changeIllustPageLayout)) {
-        util_js_1.Util.changeIllustPageLayout();
-        console.log("layout chainged");
-    }
-    if (setting.openComment && page.isEnable(enum_1.prop.openComment)) {
-        util.openComment(page);
-        console.log("comment opend");
-    }
-    if (setting.changeMemberPageLayout && page.pagetype === enum_1.pagetype.member_illust) {
-        const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
-        document.getElementById("root").appendChild(autherElem);
-        console.log("layout chainged");
-    }
-    //change layout and open comment
-    const links = document.getElementsByTagName("a");
+    //レイアウトを変更しコメントを開く
+    const onloadExecute = util.onloadExecute(setting, page);
+    const links = document.getElementsByTagName('a');
     for (const link of links) {
-        link.addEventListener("click", () => {
-            let page = new page_js_1.Page(document.URL);
-            console.log("pagetype:" + page.pagetype.toString());
-            if (setting.changeIllustPageLayout && page.isEnable(enum_1.prop.changeIllustPageLayout)) {
-                util_js_1.Util.changeIllustPageLayout();
-                console.log("layout chainged.");
-            }
-            if (setting.changeMemberPageLayout && page.pagetype === enum_1.pagetype.member_illust) {
-                const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
-                document.getElementById("root").appendChild(autherElem);
-            }
-            if (setting.openComment && page.isEnable(enum_1.prop.openComment)) {
-                util.openComment(page);
-                console.log("comment opend.");
-            }
+        link.addEventListener('click', () => {
+            const newPageExecute = util.onloadExecute(setting, new page_1.Page(document.URL));
         });
     }
-    // })
+    setting.save();
 };
 
 

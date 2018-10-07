@@ -27,7 +27,6 @@ export class Page {
         this.pagetype = Util.checkPageType(url);
     }
 
-
     get getURL() {
         return this.URL;
     }

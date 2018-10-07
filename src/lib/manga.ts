@@ -18,9 +18,6 @@ export class Manga {
     imgsArr = []
     DELTASCALE = ('mozInnerScreenX' in window) ? 70 : 4
 
-    constructor() {
-
-    }
 
     set LastImgId(id: string) {
         this.lastImgId = id
