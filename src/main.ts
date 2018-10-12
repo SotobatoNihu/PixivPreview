@@ -4,14 +4,11 @@ import {Util,} from './lib/util'
 import {Setting} from './lib/setting'
 
 'use strict';
-/*
-設定画面やsave & load 機能を実装予定
+
+
+/**
+ * メイン関数
  */
-
-
-/*
-* main function
-*/
 const page = new Page(document.URL);
 const util = new Util();
 
@@ -24,7 +21,7 @@ setting.init().then(() => {
 window.onload = () => {
     console.log("pagetype:" + page.pagetype.toString());
     //レイアウトを変更しコメントを開く
-    const onloadExecute = util.onloadExecute(setting, page);
+    util.onloadExecute(setting, page);
 
     const links = document.getElementsByTagName('a')
     for (const link of links) {

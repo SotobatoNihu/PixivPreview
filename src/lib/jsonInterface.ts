@@ -1,5 +1,8 @@
-
-// http://json2ts.com/
+/**
+ * Jsonをパースするときに使用する各種Json用クラス
+ * http://json2ts.com/で自動生成
+ *
+ */
 
 export class PixivJson implements PixivJsonInterface{
     error: boolean;
@@ -83,7 +86,25 @@ export interface Tag {
     translation: Translation;
     userName: string;
 }
+
 export interface Translation {
     en: string;
 }
 
+export interface Frame {
+    file: string;
+    delay: number;
+}
+
+export interface Body {
+    src: string;
+    originalSrc: string;
+    mime_type: string;
+    frames: Frame[];
+}
+
+export interface RootObject {
+    error: boolean;
+    message: string;
+    body: Body;
+}

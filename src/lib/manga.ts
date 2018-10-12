@@ -1,6 +1,9 @@
 import {Util} from "./util";
 import {prop} from "./enum";
 
+/**
+ * html上のページごとの漫画情報を管理する
+ */
 export class Manga {
     followedUsersId = [] //storing followed users pixiv ID
     BOOKMARK_URL = 'https://www.pixiv.net/bookmark.php'

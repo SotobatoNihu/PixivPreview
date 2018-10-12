@@ -1,3 +1,8 @@
+/**
+ *  divやspan,imgなどのHTML要素を作るファクトリ
+ */
+
+
 interface ContainerFactoryInterface {
     id:String
     setId(id:string)
@@ -53,7 +58,7 @@ export class  ContainerFactory implements  ContainerFactoryInterface{
         return  elem
     }
 
-    setVoidHtml(){
+    initHtml(){
         this.innerHtml=''
         return this
     }

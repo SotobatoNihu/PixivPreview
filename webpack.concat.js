@@ -1,5 +1,6 @@
 const ConcatPlugin = require('webpack-concat-plugin');
 
+
 module.exports = {
     entry: './dist/bundle.js',
     plugins: [

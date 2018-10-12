@@ -1,5 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * html上のページごとの漫画情報を管理する
+ */
 class Manga {
     constructor() {
         this.followedUsersId = []; //storing followed users pixiv ID

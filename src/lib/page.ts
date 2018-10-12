@@ -1,6 +1,9 @@
 import {Util} from './util'
 import {prop, pagetype} from "./enum";
 
+/**
+ * 現在いるページを管理するページオブジェクト
+ */
 export class Page {
 
     URL: string
@@ -9,9 +12,6 @@ export class Page {
     siteImgMaxWidth: Number
      imgSelector:String
     mangaSelector:String
-
-
-
 
     constructor(url) {
         this.URL = url;

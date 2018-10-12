@@ -1,6 +1,13 @@
 import {uiComponent} from "./enum";
 
+
+/**
+ *　機能の有効/無効等の設定内容
+ *
+ */
+
 export class Setting {
+
     changeIllustPageLayout=true
     changeMemberPageLayout=true
     openComment=true
@@ -28,7 +35,7 @@ export class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
-        this.uiComponent = [uiComponent.image, uiComponent.manga, uiComponent.caption]
+        this.uiComponent = [uiComponent.image, uiComponent.manga,uiComponent.ugoira, uiComponent.caption]
     }
 
     set setData(jsonData) {

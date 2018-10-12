@@ -1,4 +1,7 @@
 "use strict";
+/**
+ * 本プロジェクトで使用する各種列挙型
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 var prop;
 (function (prop) {
@@ -12,7 +15,8 @@ var uiComponent;
 (function (uiComponent) {
     uiComponent[uiComponent["image"] = 0] = "image";
     uiComponent[uiComponent["manga"] = 1] = "manga";
-    uiComponent[uiComponent["caption"] = 2] = "caption";
+    uiComponent[uiComponent["ugoira"] = 2] = "ugoira";
+    uiComponent[uiComponent["caption"] = 3] = "caption";
 })(uiComponent = exports.uiComponent || (exports.uiComponent = {}));
 var pagetype;
 (function (pagetype) {

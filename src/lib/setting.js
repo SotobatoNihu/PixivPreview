@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const enum_1 = require("./enum");
+/**
+ *　機能の有効/無効等の設定内容
+ *
+ */
 class Setting {
     constructor() {
         this.changeIllustPageLayout = true;
@@ -26,7 +30,7 @@ class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
-        this.uiComponent = [enum_1.uiComponent.image, enum_1.uiComponent.manga, enum_1.uiComponent.caption];
+        this.uiComponent = [enum_1.uiComponent.image, enum_1.uiComponent.manga, enum_1.uiComponent.ugoira, enum_1.uiComponent.caption];
     }
     set setData(jsonData) {
         this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout;

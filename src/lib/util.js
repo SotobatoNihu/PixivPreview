@@ -5,14 +5,22 @@ const popupUtil_1 = require("./popupUtil");
 const setting_1 = require("./setting");
 const ContainerFactory_1 = require("./ContainerFactory");
 const jsonInterface_1 = require("./jsonInterface");
+/***
+ * 各種ユーティリティ関数
+ * ポップアップ機能に関するユーティリティ関数軍が長くなったため
+ * popupUtilと外出しにしている
+ */
 class Util {
     constructor() {
-        this.outerContainerCSS = `
+        this.innerContainerID = 'popup-inner-container';
+        this.outerContainerID = 'popup-outer-container';
+        this.captionContainerID = 'popup-caption-container';
+        //あとで各要素やドキュメントに挿入するCSS文字列
+        this.innerContainerCSS = `
         position:absolute;
         display:block;
         z-index:1000;
         border: 5px solid black;
-        max-width:${window.innerWidth * 0.8}px;
         background-color:#111;
         max-width:${window.innerWidth * 0.8}px;
         max-height:${window.innerHeight * 0.8}px;
@@ -58,28 +66,49 @@ class Util {
     text-decoration: none;
     cursor: pointer;
 }
-        `;
-        /*
-         async loadSettingData(){
-            const default_setting = {
-                changeIllustPageLayout: true,
-                changeMemberPageLayout: true,
-                openComment: true,
-                popup: true
-            }
-            // @ts-ignore
-            return await GM.getValue("pixiv_viewutil_setting", JSON.stringify(default_setting));
-        }
-    
-        async saveSettingData(setting: Setting) {
-            // @ts-ignore
-            await GM.setValue("pixiv_viewutil_setting", setting);
-        }
-        */
+`;
+        this.pixpediaItemCSS = `.popup-pixpedia-icon{
+    display: inline-block;
+    margin-left: 2px;
+    width: 15px;
+    height: 14px;
+    vertical-align: -2px;
+    text-decoration: none;
+    background: url(https://s.pximg.net/www/images/inline/pixpedia.png) no-repeat;
     }
+.popup-pixpedia-no-icon{
+    display: inline-block;
+    margin-left: 2px;
+    width: 15px;
+    height: 14px;
+    vertical-align: -2px;
+    text-decoration: none;
+     background: url(https://s.pximg.net/www/images/inline/pixpedia-no-item.png) no-repeat;
+}
+     `;
+        this.captionContainerCSS = `
+        white-space:pre-wrap;
+        display:block;
+        z-index:1001;
+        position:absolute;
+        border: 1px solid black;
+         max-width:${window.innerWidth * 0.8}px;
+        background-color:white;
+        word-wrap:break-word;
+        word-break:break-all;
+        `;
+        this.utilIcon = 'pixiv-view-util-icon';
+    }
+    /**
+     * とりあえずやっておくこと。
+     * 今いるページのタイプと、設定内容に応じて、レイアウトの修正やポップアップの用意を行う
+     * トップ画面の場合は設定ダイアログも用意する
+     * @param setting
+     * @param page
+     */
     async initExecute(setting, page) {
         if (page.pagetype == enum_1.pagetype.top && document.getElementById('pixiv-view-util-gear') === null) {
-            this.setConfigScreen();
+            this.setConfigDialog();
         }
         if (setting.popup && page.isEnable(enum_1.prop.popup_typeA)) {
             this.setPopup(page, setting);
@@ -89,15 +118,15 @@ class Util {
             this.setPopup(page, setting);
             console.log("set popup typeB");
         }
-        if (setting.changeMemberPageLayout && page.isEnable(enum_1.prop.changeMemberPageLayout)) {
-            const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
-            document.getElementById("root").appendChild(autherElem);
-            console.log("layout chainged");
-        }
     }
+    /**
+     * 画面読み込み完了時に行うこと。initExecuteと同様
+     * @param setting
+     * @param page
+     */
     onloadExecute(setting, page) {
         if (page.pagetype === enum_1.pagetype.top && document.getElementById('pixiv-view-util-gear') === null) {
-            this.setConfigScreen();
+            this.setConfigDialog();
         }
         if (setting.changeIllustPageLayout && page.isEnable(enum_1.prop.changeIllustPageLayout)) {
             Util.changeIllustPageLayout();
@@ -107,13 +136,18 @@ class Util {
             this.openComment(page);
             console.log("comment opend");
         }
-        if (setting.changeMemberPageLayout && page.pagetype === enum_1.pagetype.member_illust) {
-            const autherElem = document.getElementsByTagName('header')[0].nextElementSibling.children[0].children[0]; //$('header').next().children().children()
-            document.getElementById("root").appendChild(autherElem);
-            console.log("layout chainged");
+        if (setting.changeMemberPageLayout && (page.pagetype === enum_1.pagetype.member)) {
+            this.changeMemberPageLayout();
+            //読み込みに時間がかかるようなので時差を付ける
+            for (let i = 0; i < 5; i++) {
+                setTimeout(this.changeMemberPageLayout(), 1000 * i);
+            }
         }
     }
-    //   function checkPageType(url) {
+    /**
+     * URLに応じてpagetypeを返す
+     * @param url
+     */
     static checkPageType(url) {
         if (url.match('https://www.pixiv.net/bookmark_new_illust.php?'))
             return enum_1.pagetype.bookmark_new_illust;
@@ -141,25 +175,18 @@ class Util {
             return enum_1.pagetype.other;
     }
     ;
+    /**
+     * イラスト閲覧ページのレイアウトを修正する
+     */
     static changeIllustPageLayout() {
         $('figure').before($('figcaption'));
     }
-    static changeMemberPageLayout() {
-        // TODO もっと良い方法
-        //const tagElem=$('.gm-profile-work-list-tag-list-click')
-        //const illustElem=tagElem.parent().parent().parent().parent()
-        //$('header').next().prepend(illustElem)
-        // $('nav').parent().parent().prepend(illustElem)
-        const h2Elems = $('h2');
-        for (const h2elem of h2Elems) {
-            if (h2elem.innerText.startsWith("イラスト")) {
-                const illustElem = $(h2elem).parent().parent();
-                //$('nav').parent().parent().prepend(illustElem)
-                $('header').next().prepend(illustElem);
-                break;
-            }
-        }
-    }
+    /**
+     * そのページで可能な、本スクリプトが対象とする操作を返す
+     * HTML要素に埋め込まれたURLの構造にはページに応じて2パターンあり、かつてはポップアップ機能はパターンごとに
+     * 区別し実行していたためその名残でタイプA/Bが残っている
+     * @param type
+     */
     static getAllowedFuncList(type) {
         switch (type) {
             case enum_1.pagetype.top:
@@ -188,6 +215,10 @@ class Util {
                 return [];
         }
     }
+    /**
+     * コメントを開く
+     * @param page
+     */
     openComment(page) {
         if (page.getURL.indexOf('mode=medium') > 0) {
             let elem = $("article");
@@ -201,64 +232,118 @@ class Util {
             });
         }
     }
+    /**
+     * ポップアップ機能の用意を行う
+     * @param page
+     * @param setting
+     */
     setPopup(page, setting) {
         const popupUtil = new popupUtil_1.PopupUtil();
+        //IDやCSSなどをセットしたHTML要素を作成
         const factory = new ContainerFactory_1.ContainerFactory();
-        const outerContainer = factory.setId('outerContainer')
-            .setCSS(this.outerContainerCSS)
-            .setVoidHtml()
+        //ポップアップの外枠となるouterContainer
+        const outerContainer = factory.setId(this.outerContainerID)
+            .initHtml()
             .createDiv();
+        const innerContainer = factory.setId(this.innerContainerID)
+            .setCSS(this.innerContainerCSS)
+            .initHtml()
+            .createDiv();
+        const captionContainer = factory.setId(this.captionContainerID)
+            .setCSS(this.captionContainerCSS)
+            .initHtml()
+            .createDiv();
+        outerContainer.appendChild(captionContainer);
+        outerContainer.appendChild(innerContainer);
         document.body.appendChild(outerContainer);
+        //ドキュメントにCSSを登録
+        const style = document.createElement('style');
+        style.textContent = this.pixpediaItemCSS;
+        document.getElementsByTagName('head')[0].appendChild(style);
         // イラスト＆漫画のクリックイベントを登録する
         $('body').on('mouseenter', 'a[href*="member_illust.php?mode=medium&illust_id="]', function () {
+            //クリック対象とhrefがある要素の入れ子関係は２パターン以上あるため注意
             const thumb = $(this).find('.non-trim-thumb');
             const clickElem = thumb.length > 0 ? thumb[0] : this;
-            //イラストのクリックを抑制
+            //イラストの本来のクリックによる遷移を抑制
             $(this).attr('onclick', 'console.log();return false;');
-            //漫画のクリックを抑制
+            //漫画の本来のクリックによる遷移を抑制
             $(this).find('.non-trim-thumb').attr('onclick', 'console.log();return false;');
             const hrefElem = this;
             const url = this.getAttribute("href");
+            //イラストIDを取得
             const matches = url.match(/(.)+illust_id=([0-9]+)(&.+)?/);
             const illustID = Number(matches[2]);
-            $(clickElem).on('click', function (e) {
-                fetch(`https://www.pixiv.net/ajax/illust/${illustID}`).then(function (response) {
-                    return response.json();
-                }).then(function (json) {
+            //ポップアップを実行
+            $(clickElem).on('click', async function (e) {
+                outerContainer.style.display = 'block';
+                //イラストIDを元にJSONを入手
+                await fetch(`https://www.pixiv.net/ajax/illust/${illustID}`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    keepalive: true
+                }).then(function (response) {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                }).then(async function (json) {
+                    //pixivJsonオブジェクトに格納
                     const pixivJson = new jsonInterface_1.PixivJson(json);
                     // const mouseX=e.pageX
                     //const mouseY=e.pageY
-                    if (!popupUtil.isManga(pixivJson)) {
-                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
-                    }
-                    else {
+                    //漫画のポップアップを実行
+                    if (popupUtil.isManga(pixivJson)) {
                         const pageNum = Util.getPageNum(pixivJson);
                         popupUtil.popupManga(outerContainer, hrefElem, pixivJson, Number(pageNum));
                     }
+                    else if (popupUtil.isIllust(pixivJson)) {
+                        //イラストのポップアップを実行
+                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
+                    }
+                    else {
+                        //うごイラのポップアップを実行
+                        //うごイラは通常のイラストのポップアップ手順でも正常動作する
+                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
+                        //うごイラのメタ情報のJSONを入手
+                        await fetch(`https://www.pixiv.net/ajax/illust/${pixivJson.body.illustId}/ugoira_meta`)
+                            .then(function (response) {
+                            return response.json();
+                        }).then(json => {
+                            popupUtil.popupUgoira(outerContainer, hrefElem, pixivJson, new jsonInterface_1.PixivJson(json)).then(result => console.log(result));
+                        });
+                    }
+                    //キャプションのポップアップを実行
                     popupUtil.popupCaption(outerContainer, pixivJson);
                 });
             });
         });
-        const deleteAll = () => {
-            const elem = document.getElementById('captionContainer');
-            if (elem !== null) {
-                elem.parentNode.removeChild(elem);
-            }
-            outerContainer.textContent = null;
-            outerContainer.style.display = 'none';
+        outerContainer.onmouseleave = () => {
+            this.cleanContainer(outerContainer);
         };
-        outerContainer.onmouseleave = function () {
-            const elem = document.getElementById('captionContainer').innerHTML;
-            if ($(elem).find('a').length == 0) {
-                deleteAll();
-            }
-            else {
-                setTimeout(deleteAll(), 1000);
-            }
+        outerContainer.onclick = () => {
+            this.cleanContainer(outerContainer);
         };
         window.onresize = function () {
             outerContainer.style.maxWidth = `${window.innerWidth * 0.8}px`;
         };
+    }
+    cleanContainer(outerContainer) {
+        const innerContainer = document.getElementById(this.innerContainerID);
+        const captionContainer = document.getElementById(this.captionContainerID);
+        innerContainer.innerText = '';
+        captionContainer.innerText = '';
+        outerContainer.style.display = 'none';
+        /*
+        const childContainer=outerContainer.childNodes
+        for(let container of childContainer){
+            container.innerText=''
+        }
+
+
+       document.getElementById(this.innerContainerID).innerText=''
+        document.getElementById(this.captionContainerID).innerText=''
+        document.getElementById(this.outerContainerID).style.display = 'none';
+*/
     }
     static getUserID(json) {
         return json.body.tags.authorId;
@@ -266,14 +351,21 @@ class Util {
     static getPageNum(json) {
         return Number(json.body.pageCount);
     }
-    async setConfigScreen() {
-        const iconID = 'pixiv-view-util-icon';
-        const iconElem = document.getElementById(iconID);
+    /**
+     * 設定ダイアログを用意する
+     */
+    async setConfigDialog() {
+        const iconID = this.utilIcon;
+        const iconElem = document.getElementById(this.utilIcon);
         if (iconElem === null) {
             await this.setIconElem(iconID);
             await this.setModal(iconID);
         }
     }
+    /**
+     * 設定アイコンをトップページにセットする
+     * @param iconID
+     */
     async setIconElem(iconID) {
         // @ts-ignore
         const gearIcon = await GM_getResourceText('gearIcon');
@@ -294,6 +386,10 @@ class Util {
         liElem.appendChild(gearElem);
         document.body.getElementsByClassName('notifications')[0].appendChild(liElem);
     }
+    /**
+     * ダイアログ（モーダル）をセットする
+     * @param iconID
+     */
     setModal(iconID) {
         const setting = new setting_1.Setting;
         const iconElem = document.getElementById(iconID);
@@ -351,6 +447,9 @@ class Util {
             if (setting.popup && !elem3.checked)
                 elem3.checked = true;
         });
+        /**
+         * モーダルを閉じたときに設定を保存
+         */
         closeButton.onclick = () => {
             modal.style.display = 'none';
             // @ts-ignore
@@ -361,12 +460,27 @@ class Util {
             setting.popup = elem3.checked;
             setting.save();
         };
+        //modal画面の余白をクリックした場合
         window.onclick = function (event) {
             if (event.target == modal) {
                 modal.style.display = "none";
             }
         };
-        // .addEventListener("click", windowOnClick);
+    }
+    changeMemberPageLayout() {
+        // TODO もっと良い方法
+        const h2Elems = document.getElementsByTagName('h2');
+        if (typeof h2Elems !== 'undefined') {
+            for (const h2elem of h2Elems) {
+                if (h2elem.innerText.startsWith('イラスト')) {
+                    const illustElem = h2elem.parentElement.parentElement;
+                    const header = document.getElementsByTagName('header')[0];
+                    const parent = header.parentNode;
+                    parent.insertBefore(illustElem, header.nextSibling);
+                    break;
+                }
+            }
+        }
     }
 }
 exports.Util = Util;

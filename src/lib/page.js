@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const util_1 = require("./util");
+/**
+ * 現在いるページを管理するページオブジェクト
+ */
 class Page {
     constructor(url) {
         this.URL = url;
