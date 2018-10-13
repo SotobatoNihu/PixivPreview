@@ -136,7 +136,7 @@ class Util {
             this.openComment(page);
             console.log("comment opend");
         }
-        if (setting.changeMemberPageLayout && (page.pagetype === enum_1.pagetype.member)) {
+        if (setting.changeMemberPageLayout && (page.pagetype === enum_1.pagetype.member || page.pagetype === enum_1.pagetype.member_illust)) {
             this.changeMemberPageLayout();
             //読み込みに時間がかかるようなので時差を付ける
             for (let i = 0; i < 5; i++) {

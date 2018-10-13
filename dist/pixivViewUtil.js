@@ -13,7 +13,7 @@
 // @match           https://www.pixiv.net/bookmark.php*
 // @match           https://www.pixiv.net/search.php*
 // @match           https://www.pixiv.net*
-// @version         0.5.3-20181013
+// @version         0.5.4-20181013
 // @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
 // @license         MIT License
 // @require         https://code.jquery.com/jquery-3.2.1.min.js
@@ -428,7 +428,7 @@ class Util {
             this.openComment(page);
             console.log("comment opend");
         }
-        if (setting.changeMemberPageLayout && (page.pagetype === enum_1.pagetype.member)) {
+        if (setting.changeMemberPageLayout && (page.pagetype === enum_1.pagetype.member || page.pagetype === enum_1.pagetype.member_illust)) {
             this.changeMemberPageLayout();
             //読み込みに時間がかかるようなので時差を付ける
             for (let i = 0; i < 5; i++) {
