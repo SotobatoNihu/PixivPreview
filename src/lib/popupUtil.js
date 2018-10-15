@@ -38,10 +38,14 @@ class PopupUtil {
             white-space:nowrap;
             `;
         this.imgContainerCSS = `width: auto; 
-            height:auto;
+          height:auto;
+          left: 0;
+          top: 0;
             display:block;
             `;
         this.infoContainerCSS = `font-size: 12px; 
+          left: 0;
+          top: 0;
             color:rgb(173, 173, 173); 
             line-height=1;`;
     }
@@ -94,23 +98,21 @@ class PopupUtil {
         let imgWidth = resize.width;
         imgElement.style.width = `${imgWidth}px`;
         imgElement.style.height = `${imgHeight}px`;
+        outerContainer.style.width = `${imgWidth}px`;
+        outerContainer.style.height = `${imgHeight}px`;
         innerContainer.style.width = `${imgWidth}px`;
         innerContainer.style.height = `${imgHeight}px`;
         innerContainer.style.display = 'block';
-        //表示位置を調整
-        const offset = this.getOffset(innerContainer);
-        innerContainer.style.top = offset.top + 'px';
-        innerContainer.style.left = offset.left + 'px';
     }
     /**
      * 大きさがあるHTMLelementを引数に、それが画面の中央に表示されるようになるelementのtop・leftの値を返す
-     * @param innerContainer
+     * @param elem
      */
-    getOffset(innerContainer) {
+    getOffset(elem) {
         const w_height = $(window).height();
         const w_width = $(window).width();
-        const el_height = $(innerContainer).height();
-        const el_width = $(innerContainer).width();
+        const el_height = $(elem).height();
+        const el_width = $(elem).width();
         const scroll_height = $(window).scrollTop();
         const position_h = scroll_height + (w_height - el_height) / 2;
         const position_w = (w_width - el_width) / 2;
@@ -164,12 +166,13 @@ class PopupUtil {
         captionContainer.appendChild(descriptionElem);
         captionContainer.appendChild(tagElem);
         captionContainer.appendChild(infoElem);
-        //innerContainer.parentNode.insertBefore(captionContainer, innerContainer)
         //表示位置を調整
-        const y = parseInt(innerContainer.style.top) - captionContainer.getBoundingClientRect().height;
-        captionContainer.style.top = `${y}px`;
-        captionContainer.style.left = innerContainer.style.left;
-        captionContainer.style.width = innerContainer.style.width;
+        captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
+        captionContainer.style.width = outerContainer.style.width;
+        //表示位置を調整
+        const offset = this.getOffset(outerContainer);
+        outerContainer.style.top = offset.top + 'px';
+        outerContainer.style.left = offset.left + 'px';
     }
     /**
      * タグ情報を格納したHTMLelementを作成する
@@ -224,11 +227,10 @@ class PopupUtil {
         }
         //各ページをセット
         this.imgsArrInit(innerContainer, mangaContainer, manga, this.getImgUrl(json), count);
+        outerContainer.style.width = innerContainer.style.maxWidth;
+        outerContainer.style.height = innerContainer.style.maxHeight;
         innerContainer.style.width = innerContainer.style.maxWidth;
         innerContainer.style.height = innerContainer.style.maxHeight;
-        const offset = this.getOffset(innerContainer);
-        innerContainer.style.top = `${offset.top}px`;
-        innerContainer.style.left = `${offset.left}px`;
         mangaContainer.style.display = 'block';
         innerContainer.style.display = 'block';
         //スクロールをセット
@@ -348,21 +350,18 @@ class PopupUtil {
             const size = this.resize(pixivJson.body.width, pixivJson.body.height);
             canvas.width = size.width;
             canvas.height = size.height;
+            outerContainer.style.width = `${size.width}px`;
+            outerContainer.style.height = `${size.height}px`;
             innerContainer.style.width = `${size.width}px`;
             innerContainer.style.height = `${size.height}px`;
             ugoiraContainer.appendChild(canvas);
             $(innerContainer).css("background", "rgb(34, 34, 34)");
-            const offset = this.getOffset(innerContainer);
-            innerContainer.style.top = `${offset.top}px`;
-            innerContainer.style.left = `${offset.left}px`;
             ugoiraContainer.style.display = 'block';
             innerContainer.style.display = 'block';
             //表示位置を調整
             const captionContainer = document.getElementById(this.captionContainerID);
-            captionContainer.style.width = `${pixivJson.body.width}px`;
-            const y = parseInt(innerContainer.style.top) - captionContainer.getBoundingClientRect().height;
-            captionContainer.style.top = `${y}px`;
-            captionContainer.style.left = innerContainer.style.left;
+            captionContainer.style.width = `${size.width}px`;
+            captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
             const frameArray = ugoira.getFrameArray;
             const stringArray = ugoira.getImgStringArray;
             let index = 0;

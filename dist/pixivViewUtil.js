@@ -13,7 +13,7 @@
 // @match           https://www.pixiv.net/bookmark.php*
 // @match           https://www.pixiv.net/search.php*
 // @match           https://www.pixiv.net*
-// @version         0.5.4-20181013
+// @version         0.5.6-20181013
 // @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
 // @license         MIT License
 // @require         https://code.jquery.com/jquery-3.2.1.min.js
@@ -537,14 +537,17 @@ class Util {
         const outerContainer = factory.setId(this.outerContainerID)
             .initHtml()
             .createDiv();
+        outerContainer.style.position = 'absolute';
         const innerContainer = factory.setId(this.innerContainerID)
             .setCSS(this.innerContainerCSS)
             .initHtml()
             .createDiv();
+        innerContainer.draggable = true;
         const captionContainer = factory.setId(this.captionContainerID)
             .setCSS(this.captionContainerCSS)
             .initHtml()
             .createDiv();
+        captionContainer.draggable = true;
         outerContainer.appendChild(captionContainer);
         outerContainer.appendChild(innerContainer);
         document.body.appendChild(outerContainer);
@@ -609,15 +612,7 @@ class Util {
                 });
             });
         });
-        outerContainer.onmouseleave = () => {
-            this.cleanContainer(outerContainer);
-        };
-        outerContainer.onclick = () => {
-            this.cleanContainer(outerContainer);
-        };
-        window.onresize = function () {
-            outerContainer.style.maxWidth = `${window.innerWidth * 0.8}px`;
-        };
+        this.addMouseMove(outerContainer);
     }
     cleanContainer(outerContainer) {
         const innerContainer = document.getElementById(this.innerContainerID);
@@ -774,6 +769,61 @@ class Util {
             }
         }
     }
+    addMouseMove(elem) {
+        let is_dragging = false;
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        elem.onmouseleave = () => {
+            this.cleanContainer(elem);
+        };
+        elem.onmouseup = () => {
+            if (!is_dragging) {
+                this.cleanContainer(elem);
+            }
+        };
+        window.onresize = function () {
+            elem.style.maxWidth = `${window.innerWidth * 0.8}px`;
+        };
+        function changeOffset(elem, pos1, pos2) {
+            is_dragging = true;
+            elem.style.top = (elem.offsetTop - pos2) + "px";
+            elem.style.left = (elem.offsetLeft - pos1) + "px";
+            if (elem.children().length > 0) {
+                for (let child of elem.children()) {
+                    changeOffset(child, pos1, pos2);
+                }
+            }
+        }
+        function elementDrag(e) {
+            is_dragging = true;
+            e = e || window.event;
+            e.preventDefault();
+            // calculate the new cursor position:
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            // set the element's new position:
+            changeOffset(elem, pos1, pos2);
+        }
+        function closeDragElement() {
+            // stop moving when mouse button is released:
+            document.onmouseup = null;
+            document.onmousemove = null;
+            is_dragging = false;
+        }
+        function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            // call a function whenever the cursor moves:
+            document.onmousemove = elementDrag;
+        }
+        elem.onmousedown = dragMouseDown;
+        document.onmousemove = elementDrag;
+    }
 }
 exports.Util = Util;
 
@@ -927,10 +977,14 @@ class PopupUtil {
             white-space:nowrap;
             `;
         this.imgContainerCSS = `width: auto; 
-            height:auto;
+          height:auto;
+          left: 0;
+          top: 0;
             display:block;
             `;
         this.infoContainerCSS = `font-size: 12px; 
+          left: 0;
+          top: 0;
             color:rgb(173, 173, 173); 
             line-height=1;`;
     }
@@ -983,23 +1037,21 @@ class PopupUtil {
         let imgWidth = resize.width;
         imgElement.style.width = `${imgWidth}px`;
         imgElement.style.height = `${imgHeight}px`;
+        outerContainer.style.width = `${imgWidth}px`;
+        outerContainer.style.height = `${imgHeight}px`;
         innerContainer.style.width = `${imgWidth}px`;
         innerContainer.style.height = `${imgHeight}px`;
         innerContainer.style.display = 'block';
-        //表示位置を調整
-        const offset = this.getOffset(innerContainer);
-        innerContainer.style.top = offset.top + 'px';
-        innerContainer.style.left = offset.left + 'px';
     }
     /**
      * 大きさがあるHTMLelementを引数に、それが画面の中央に表示されるようになるelementのtop・leftの値を返す
-     * @param innerContainer
+     * @param elem
      */
-    getOffset(innerContainer) {
+    getOffset(elem) {
         const w_height = $(window).height();
         const w_width = $(window).width();
-        const el_height = $(innerContainer).height();
-        const el_width = $(innerContainer).width();
+        const el_height = $(elem).height();
+        const el_width = $(elem).width();
         const scroll_height = $(window).scrollTop();
         const position_h = scroll_height + (w_height - el_height) / 2;
         const position_w = (w_width - el_width) / 2;
@@ -1053,12 +1105,13 @@ class PopupUtil {
         captionContainer.appendChild(descriptionElem);
         captionContainer.appendChild(tagElem);
         captionContainer.appendChild(infoElem);
-        //innerContainer.parentNode.insertBefore(captionContainer, innerContainer)
         //表示位置を調整
-        const y = parseInt(innerContainer.style.top) - captionContainer.getBoundingClientRect().height;
-        captionContainer.style.top = `${y}px`;
-        captionContainer.style.left = innerContainer.style.left;
-        captionContainer.style.width = innerContainer.style.width;
+        captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
+        captionContainer.style.width = outerContainer.style.width;
+        //表示位置を調整
+        const offset = this.getOffset(outerContainer);
+        outerContainer.style.top = offset.top + 'px';
+        outerContainer.style.left = offset.left + 'px';
     }
     /**
      * タグ情報を格納したHTMLelementを作成する
@@ -1113,11 +1166,10 @@ class PopupUtil {
         }
         //各ページをセット
         this.imgsArrInit(innerContainer, mangaContainer, manga, this.getImgUrl(json), count);
+        outerContainer.style.width = innerContainer.style.maxWidth;
+        outerContainer.style.height = innerContainer.style.maxHeight;
         innerContainer.style.width = innerContainer.style.maxWidth;
         innerContainer.style.height = innerContainer.style.maxHeight;
-        const offset = this.getOffset(innerContainer);
-        innerContainer.style.top = `${offset.top}px`;
-        innerContainer.style.left = `${offset.left}px`;
         mangaContainer.style.display = 'block';
         innerContainer.style.display = 'block';
         //スクロールをセット
@@ -1237,21 +1289,18 @@ class PopupUtil {
             const size = this.resize(pixivJson.body.width, pixivJson.body.height);
             canvas.width = size.width;
             canvas.height = size.height;
+            outerContainer.style.width = `${size.width}px`;
+            outerContainer.style.height = `${size.height}px`;
             innerContainer.style.width = `${size.width}px`;
             innerContainer.style.height = `${size.height}px`;
             ugoiraContainer.appendChild(canvas);
             $(innerContainer).css("background", "rgb(34, 34, 34)");
-            const offset = this.getOffset(innerContainer);
-            innerContainer.style.top = `${offset.top}px`;
-            innerContainer.style.left = `${offset.left}px`;
             ugoiraContainer.style.display = 'block';
             innerContainer.style.display = 'block';
             //表示位置を調整
             const captionContainer = document.getElementById(this.captionContainerID);
-            captionContainer.style.width = `${pixivJson.body.width}px`;
-            const y = parseInt(innerContainer.style.top) - captionContainer.getBoundingClientRect().height;
-            captionContainer.style.top = `${y}px`;
-            captionContainer.style.left = innerContainer.style.left;
+            captionContainer.style.width = `${size.width}px`;
+            captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
             const frameArray = ugoira.getFrameArray;
             const stringArray = ugoira.getImgStringArray;
             let index = 0;

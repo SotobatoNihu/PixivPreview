@@ -251,17 +251,19 @@ export class Util {
         const outerContainer: HTMLElement = factory.setId(this.outerContainerID)
             .initHtml()
             .createDiv()
+        outerContainer.style.position='absolute'
 
         const innerContainer: HTMLElement = factory.setId(this.innerContainerID)
             .setCSS(this.innerContainerCSS)
             .initHtml()
             .createDiv()
+        innerContainer.draggable = true
 
         const captionContainer: HTMLElement = factory.setId(this.captionContainerID)
             .setCSS(this.captionContainerCSS)
             .initHtml()
             .createDiv()
-
+        captionContainer.draggable = true
 
         outerContainer.appendChild(captionContainer)
         outerContainer.appendChild(innerContainer)
@@ -343,18 +345,8 @@ export class Util {
             })
         })
 
+        this.addMouseMove(outerContainer)
 
-        outerContainer.onmouseleave = () => {
-            this.cleanContainer(outerContainer)
-        };
-
-        outerContainer.onclick = () => {
-            this.cleanContainer(outerContainer)
-        }
-
-        window.onresize = function () {
-            outerContainer.style.maxWidth = `${window.innerWidth * 0.8}px`;
-        };
     }
 
     private cleanContainer(outerContainer) {
@@ -530,4 +522,70 @@ export class Util {
         }
 
     }
+
+    private addMouseMove(elem: HTMLElement) {
+        let is_dragging=false
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        elem.onmouseleave = () => {
+            this.cleanContainer(elem)
+        };
+
+        elem.onmouseup= () => {
+            if(!is_dragging) {
+                this.cleanContainer(elem)
+            }
+        }
+
+        window.onresize = function () {
+            elem.style.maxWidth = `${window.innerWidth * 0.8}px`;
+        };
+
+        function changeOffset(elem,pos1,pos2){
+            is_dragging=true
+            elem.style.top = (elem.offsetTop - pos2) + "px";
+            elem.style.left = (elem.offsetLeft - pos1) + "px";
+            if(elem.children().length>0){
+                for(let child of elem.children()){
+                    changeOffset(child,pos1,pos2)
+            }
+            }
+        }
+        function elementDrag(e) {
+            is_dragging=true
+            e = e || window.event;
+            e.preventDefault();
+            // calculate the new cursor position:
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            // set the element's new position:
+
+            changeOffset(elem,pos1,pos2)
+
+
+        }
+
+        function closeDragElement() {
+            // stop moving when mouse button is released:
+            document.onmouseup = null;
+            document.onmousemove = null;
+            is_dragging=false
+        }
+        function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            // call a function whenever the cursor moves:
+            document.onmousemove = elementDrag;
+        }
+
+        elem.onmousedown = dragMouseDown;
+        document.onmousemove = elementDrag;
+
+    }
+    
 }
