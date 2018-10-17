@@ -20,7 +20,7 @@ window.onload = () => {
     const links = document.getElementsByTagName('a');
     for (const link of links) {
         link.addEventListener('click', () => {
-            const newPageExecute = util.onloadExecute(setting, new page_1.Page(document.URL));
+            util.onloadExecute(setting, new page_1.Page(document.URL));
         });
     }
     setting.save();

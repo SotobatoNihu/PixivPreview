@@ -11,6 +11,7 @@ class Setting {
         this.changeMemberPageLayout = true;
         this.openComment = true;
         this.popup = true;
+        this.popupScale = 0.7;
     }
     async init() {
         // @ts-ignore
@@ -21,6 +22,7 @@ class Setting {
                 this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
                 this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
                 this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+                this.popupScale = (jsonData.popupScale == null) ? 0.7 : jsonData.popupScale;
             }
         });
     }
@@ -30,6 +32,7 @@ class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+        this.popupScale = (jsonData.popup == null) ? 0.7 : jsonData.popupScale;
         this.uiComponent = [enum_1.uiComponent.image, enum_1.uiComponent.manga, enum_1.uiComponent.ugoira, enum_1.uiComponent.caption];
     }
     set setData(jsonData) {
@@ -37,6 +40,7 @@ class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+        this.popupScale = (jsonData.popup == null) ? 0.7 : jsonData.popupScale;
     }
     get getJsonString() {
         const obj = {
@@ -44,6 +48,7 @@ class Setting {
             changeMemberPageLayout: this.changeMemberPageLayout,
             openComment: this.openComment,
             popup: this.popup,
+            popupScale: this.popupScale,
         };
         return JSON.stringify(obj);
     }

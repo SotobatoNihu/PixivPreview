@@ -141,6 +141,7 @@ class Setting {
         this.changeMemberPageLayout = true;
         this.openComment = true;
         this.popup = true;
+        this.popupScale = 0.7;
     }
     async init() {
         // @ts-ignore
@@ -151,6 +152,7 @@ class Setting {
                 this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
                 this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
                 this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+                this.popupScale = (jsonData.popupScale == null) ? 0.7 : jsonData.popupScale;
             }
         });
     }
@@ -160,6 +162,7 @@ class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+        this.popupScale = (jsonData.popup == null) ? 0.7 : jsonData.popupScale;
         this.uiComponent = [enum_1.uiComponent.image, enum_1.uiComponent.manga, enum_1.uiComponent.ugoira, enum_1.uiComponent.caption];
     }
     set setData(jsonData) {
@@ -167,6 +170,7 @@ class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout;
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+        this.popupScale = (jsonData.popup == null) ? 0.7 : jsonData.popupScale;
     }
     get getJsonString() {
         const obj = {
@@ -174,6 +178,7 @@ class Setting {
             changeMemberPageLayout: this.changeMemberPageLayout,
             openComment: this.openComment,
             popup: this.popup,
+            popupScale: this.popupScale,
         };
         return JSON.stringify(obj);
     }
@@ -198,12 +203,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 class ContainerFactory {
     constructor() {
         this.id = '';
+        this.classname = '';
         this.innerHtml = '';
         this.innerText = '';
         this.cssText = '';
     }
     setId(idString) {
         this.id = idString;
+        return this;
+    }
+    setClass(classname) {
+        this.classname = classname;
         return this;
     }
     setLeft(x) {
@@ -225,25 +235,27 @@ class ContainerFactory {
     createDiv() {
         const elem = document.createElement('div');
         elem.id = this.id;
+        elem.className = this.classname;
         elem.innerHTML = this.innerHtml;
         elem.style.cssText = this.cssText;
+        this.init();
         return elem;
     }
     createImg() {
         const elem = document.createElement('img');
         elem.id = this.id;
+        elem.className = this.classname;
         elem.style.cssText = this.cssText;
+        this.init();
         return elem;
-    }
-    initHtml() {
-        this.innerHtml = '';
-        return this;
     }
     createSpan() {
         const elem = document.createElement('span');
         elem.id = this.id;
+        elem.className = this.classname;
         elem.innerHTML = this.innerHtml;
         elem.style.cssText = this.cssText;
+        this.init();
         return elem;
     }
     appendChild(infoElem) {
@@ -253,6 +265,13 @@ class ContainerFactory {
     setCSS(cssString) {
         this.cssText = cssString;
         return this;
+    }
+    init() {
+        this.id = '';
+        this.classname = '';
+        this.innerHtml = '';
+        this.innerText = '';
+        this.cssText = '';
     }
 }
 exports.ContainerFactory = ContainerFactory;
@@ -280,15 +299,29 @@ class Util {
         this.innerContainerID = 'popup-inner-container';
         this.outerContainerID = 'popup-outer-container';
         this.captionContainerID = 'popup-caption-container';
+        this.popupClass = 'popup-util';
         //あとで各要素やドキュメントに挿入するCSS文字列
-        this.innerContainerCSS = `
+        this.outerContainerCSS = `
         position:absolute;
-        display:block;
-        z-index:1000;
-        border: 5px solid black;
-        background-color:#111;
-        max-width:${window.innerWidth * 0.8}px;
-        max-height:${window.innerHeight * 0.8}px;
+        z-index:10000;
+        background-color:#FFF;
+        border: 1px solid black;
+        max-width:${window.innerWidth}px;
+        max-height:${window.innerHeight}px;
+        `;
+        this.captionContainerCSS = `
+        white-space:pre-wrap;
+        z-index:10001;
+        position:relative;
+       
+        width:auto;
+        height:auto;
+        max-width:${window.innerWidth}px;
+        max-height:${window.innerHeight}px;
+        background-color:white;
+        word-wrap:break-word;
+        word-break:break-all;
+        
         `;
         this.gearCSS = `width: 25px; 
          height: 25px;
@@ -351,18 +384,19 @@ class Util {
      background: url(https://s.pximg.net/www/images/inline/pixpedia-no-item.png) no-repeat;
 }
      `;
-        this.captionContainerCSS = `
-        white-space:pre-wrap;
-        display:block;
-        z-index:1001;
-        position:absolute;
-        border: 1px solid black;
-         max-width:${window.innerWidth * 0.8}px;
-        background-color:white;
-        word-wrap:break-word;
-        word-break:break-all;
+        this.utilIcon = 'pixiv-view-util-gear';
+    }
+    innerContainerCSS(scale) {
+        return `
+        border: 5px solid black;
+        background-color:#111;
+        position:relative;
+        width:100%;
+        height:100%;
+        float:left;
+        max-width:${window.innerWidth * scale}px;
+        max-height:${window.innerHeight * scale}px;
         `;
-        this.utilIcon = 'pixiv-view-util-icon';
     }
     /**
      * とりあえずやっておくこと。
@@ -372,16 +406,12 @@ class Util {
      * @param page
      */
     async initExecute(setting, page) {
-        if (page.pagetype == enum_1.pagetype.top && document.getElementById('pixiv-view-util-gear') === null) {
+        if (page.pagetype == enum_1.pagetype.top && document.getElementById(this.utilIcon) === null) {
             this.setConfigDialog();
         }
-        if (setting.popup && page.isEnable(enum_1.prop.popup_typeA)) {
+        if (setting.popup && (page.isEnable(enum_1.prop.popup_typeA)) || page.isEnable(enum_1.prop.popup_typeB)) {
             this.setPopup(page, setting);
-            console.log("set popup typeA");
-        }
-        else if (setting.popup && page.isEnable(enum_1.prop.popup_typeB)) {
-            this.setPopup(page, setting);
-            console.log("set popup typeB");
+            console.log("set popup");
         }
     }
     /**
@@ -507,20 +537,21 @@ class Util {
         //IDやCSSなどをセットしたHTML要素を作成
         const factory = new ContainerFactory_1.ContainerFactory();
         //ポップアップの外枠となるouterContainer
-        const outerContainer = factory.setId(this.outerContainerID)
-            .initHtml()
+        const outerContainer = factory
+            .setId(this.outerContainerID)
+            .setClass(this.popupClass)
+            .setCSS(this.outerContainerCSS)
             .createDiv();
-        outerContainer.style.position = 'absolute';
-        const innerContainer = factory.setId(this.innerContainerID)
-            .setCSS(this.innerContainerCSS)
-            .initHtml()
+        const innerContainer = factory
+            .setId(this.innerContainerID)
+            .setClass(this.popupClass)
+            .setCSS(this.innerContainerCSS(setting.popupScale))
             .createDiv();
-        innerContainer.draggable = true;
-        const captionContainer = factory.setId(this.captionContainerID)
+        const captionContainer = factory
+            .setId(this.captionContainerID)
+            .setClass(this.popupClass)
             .setCSS(this.captionContainerCSS)
-            .initHtml()
             .createDiv();
-        captionContainer.draggable = true;
         outerContainer.appendChild(captionContainer);
         outerContainer.appendChild(innerContainer);
         document.body.appendChild(outerContainer);
@@ -528,6 +559,7 @@ class Util {
         const style = document.createElement('style');
         style.textContent = this.pixpediaItemCSS;
         document.getElementsByTagName('head')[0].appendChild(style);
+        const classname = this.popupClass;
         // イラスト＆漫画のクリックイベントを登録する
         $('body').on('mouseenter', 'a[href*="member_illust.php?mode=medium&illust_id="]', function () {
             //クリック対象とhrefがある要素の入れ子関係は２パターン以上あるため注意
@@ -557,8 +589,6 @@ class Util {
                 }).then(async function (json) {
                     //pixivJsonオブジェクトに格納
                     const pixivJson = new jsonInterface_1.PixivJson(json);
-                    // const mouseX=e.pageX
-                    //const mouseY=e.pageY
                     //漫画のポップアップを実行
                     if (popupUtil.isManga(pixivJson)) {
                         const pageNum = Util.getPageNum(pixivJson);
@@ -566,44 +596,30 @@ class Util {
                     }
                     else if (popupUtil.isIllust(pixivJson)) {
                         //イラストのポップアップを実行
-                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
+                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson, setting.popupScale);
                     }
                     else {
                         //うごイラのポップアップを実行
                         //うごイラは通常のイラストのポップアップ手順でも正常動作する
-                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
+                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson, setting.popupScale);
                         //うごイラのメタ情報のJSONを入手
                         await fetch(`https://www.pixiv.net/ajax/illust/${pixivJson.body.illustId}/ugoira_meta`)
                             .then(function (response) {
                             return response.json();
                         }).then(json => {
-                            popupUtil.popupUgoira(outerContainer, hrefElem, pixivJson, new jsonInterface_1.PixivJson(json)).then(result => console.log(result));
+                            popupUtil.popupUgoira(outerContainer, hrefElem, pixivJson, new jsonInterface_1.PixivJson(json), setting.popupScale).then(result => console.log(result));
                         });
                     }
                     //キャプションのポップアップを実行
                     popupUtil.popupCaption(outerContainer, pixivJson);
+                    popupUtil.adjustCaption();
+                    popupUtil.addMouseMove(outerContainer);
                 });
             });
         });
-        this.addMouseMove(outerContainer);
-    }
-    cleanContainer(outerContainer) {
-        const innerContainer = document.getElementById(this.innerContainerID);
-        const captionContainer = document.getElementById(this.captionContainerID);
-        innerContainer.innerText = '';
-        captionContainer.innerText = '';
-        outerContainer.style.display = 'none';
-        /*
-        const childContainer=outerContainer.childNodes
-        for(let container of childContainer){
-            container.innerText=''
-        }
-
-
-       document.getElementById(this.innerContainerID).innerText=''
-        document.getElementById(this.captionContainerID).innerText=''
-        document.getElementById(this.outerContainerID).style.display = 'none';
-*/
+        window.onresize = function () {
+            outerContainer.style.maxWidth = `${window.innerWidth * setting.popupScale}px`;
+        };
     }
     static getUserID(json) {
         return json.body.tags.authorId;
@@ -741,61 +757,6 @@ class Util {
                 }
             }
         }
-    }
-    addMouseMove(elem) {
-        let is_dragging = false;
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        elem.onmouseleave = () => {
-            this.cleanContainer(elem);
-        };
-        elem.onmouseup = () => {
-            if (!is_dragging) {
-                this.cleanContainer(elem);
-            }
-        };
-        window.onresize = function () {
-            elem.style.maxWidth = `${window.innerWidth * 0.8}px`;
-        };
-        function changeOffset(elem, pos1, pos2) {
-            is_dragging = true;
-            elem.style.top = (elem.offsetTop - pos2) + "px";
-            elem.style.left = (elem.offsetLeft - pos1) + "px";
-            if (elem.children().length > 0) {
-                for (let child of elem.children()) {
-                    changeOffset(child, pos1, pos2);
-                }
-            }
-        }
-        function elementDrag(e) {
-            is_dragging = true;
-            e = e || window.event;
-            e.preventDefault();
-            // calculate the new cursor position:
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            // set the element's new position:
-            changeOffset(elem, pos1, pos2);
-        }
-        function closeDragElement() {
-            // stop moving when mouse button is released:
-            document.onmouseup = null;
-            document.onmousemove = null;
-            is_dragging = false;
-        }
-        function dragMouseDown(e) {
-            e = e || window.event;
-            e.preventDefault();
-            // get the mouse cursor position at startup:
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            // call a function whenever the cursor moves:
-            document.onmousemove = elementDrag;
-        }
-        elem.onmousedown = dragMouseDown;
-        document.onmousemove = elementDrag;
     }
 }
 exports.Util = Util;
@@ -935,45 +896,57 @@ class PopupUtil {
         this.outerContainerID = 'popup-outer-container';
         this.imgContainerID = 'popup-img';
         this.mangaContainerID = 'popup-manga';
+        this.ugoiraContainerID = 'popup-ugoira';
         this.captionContainerID = 'popup-caption-container';
-        this.captionTextID = 'popup-caption-text';
+        this.captionDescriptionID = 'popup-caption-text';
         this.captionTagID = 'popup-caption-tag';
         this.captionDateID = 'popup-caption-date';
         this.captionLikeID = 'popup-caption-like';
         this.captionBookmarkID = 'popup-caption-bookmark';
         this.captionViewID = 'popup-caption-view';
         this.captionInfoID = 'popup-caption-infomation';
+        this.popupClass = 'popup-util';
         //各種elementのcss
-        this.mangaContainerCSS = `display:block;
-            background-color:black;
-            overflow-x:auto;
-            white-space:nowrap;
+        this.mangaContainerCSS = ` background-color:black;
+           overflow-x:auto;
+           white-space:nowrap;
+           width: auto; 
+           height:auto;
+           left: 0;
+           top: 0;
             `;
-        this.imgContainerCSS = `width: auto; 
+        this.infoContainerCSS = `
+        background-color:white;
+        font-size:xx-small;
+        width: auto;
+        color:rgb(173, 173, 173); 
+        line-height=1;`;
+        this.imgContainerCSS = `width: 100%; 
+          height:100%;
+          left: 0;
+          top: 0;
+          background-size: contain;
+          background-position:center; 
+          background-repeat:no-repeat;
+            `;
+        this.descriptionContainerCSS = `font-size: normal; 
+          width: auto; 
           height:auto;
-          left: 0;
-          top: 0;
-            display:block;
-            `;
-        this.infoContainerCSS = `font-size: 12px; 
-          left: 0;
-          top: 0;
-            color:rgb(173, 173, 173); 
-            line-height=1;`;
+          overflow-y:scroll;`;
     }
     pixpediaCSS(innerContainer) {
         return `
         white-space:pre-wrap;
-        display:block;
-        z-index:1001;
-        position:absolute;
+        font-size:small; 
+        z-index:10001;
+        position:relative;
         border: 1px solid black;
         max-width:${innerContainer.clientWidth + 10}px;
         background-color:white;
         word-wrap:break-word;
         word-break:break-all;
-        left:${innerContainer.style.left}px;
-        width:${innerContainer.clientWidth + 10}px;
+        left:auto;
+        width:auto;
         `;
     }
     /**
@@ -985,17 +958,18 @@ class PopupUtil {
      * @param elem
      * @param json
      */
-    popupImg(page, outerContainer, elem, json) {
+    popupImg(page, outerContainer, elem, json, scale) {
         const innerContainer = document.getElementById(this.innerContainerID);
         //中身を綺麗にする
         innerContainer.innerHTML = '';
         const factory = new ContainerFactory_1.ContainerFactory();
         const imgElement = factory.setId(this.imgContainerID)
-            .initHtml()
+            .setClass(this.popupClass)
             .setCSS(this.imgContainerCSS)
-            .createImg();
+            .createDiv();
         innerContainer.appendChild(imgElement);
-        imgElement.src = this.getImgUrl(json);
+        // imgElement.src = this.getImgUrl(json)
+        imgElement.style.backgroundImage = `url(${json.body.urls.regular})`;
         if ($(elem).hasClass("on")) {
             innerContainer.style.border = '5px solid rgb(255, 64, 96)';
             // $(innerContainer).css("background", "rgb(255, 64, 96)");
@@ -1005,16 +979,11 @@ class PopupUtil {
             //$(innerContainer).css("background", "rgb(34, 34, 34)");
         }
         //大きすぎる場合はリサイズする
-        const resize = this.resize(json.body.width, json.body.height);
+        const resize = this.resize(json.body.width, json.body.height, scale);
         let imgHeight = resize.height;
         let imgWidth = resize.width;
-        imgElement.style.width = `${imgWidth}px`;
-        imgElement.style.height = `${imgHeight}px`;
         outerContainer.style.width = `${imgWidth}px`;
         outerContainer.style.height = `${imgHeight}px`;
-        innerContainer.style.width = `${imgWidth}px`;
-        innerContainer.style.height = `${imgHeight}px`;
-        innerContainer.style.display = 'block';
     }
     /**
      * 大きさがあるHTMLelementを引数に、それが画面の中央に表示されるようになるelementのtop・leftの値を返す
@@ -1041,14 +1010,15 @@ class PopupUtil {
         const innerContainer = document.getElementById(this.innerContainerID);
         //既存のキャプションコンテナがあれば破棄
         captionContainer.innerText = '';
-        // this.cleanElementById(this.captionContainerID)
         //テキストコンテナを作成
         const factory = new ContainerFactory_1.ContainerFactory();
-        const descriptionElem = factory.setId(this.captionTextID)
+        const descriptionElem = factory.setId(this.captionDescriptionID)
+            .setClass(this.popupClass)
+            .setCSS(this.descriptionContainerCSS)
             .setInnerHtml(json.body.description)
             .createDiv();
         const tagElem = factory.setId(this.captionTagID)
-            .initHtml()
+            .setClass(this.popupClass)
             .createDiv();
         tagElem.appendChild(this.getTagHtml(json));
         //投稿日
@@ -1057,17 +1027,17 @@ class PopupUtil {
         const dateElem = factory.setId(this.captionDateID).setInnerHtml(dateString).createDiv();
         //like数
         const likeString = `${this.likeIcon} ${json.body.likeCount} `;
-        const likeElem = factory.setId(this.captionLikeID).setInnerHtml(likeString).createSpan();
+        const likeElem = factory.setId(this.captionLikeID).setClass(this.popupClass).setInnerHtml(likeString).createSpan();
         //ブックマーク数
         const bookmarkString = `${this.bookmarkIcon} ${json.body.bookmarkCount} `;
-        const bookmarkElem = factory.setId(this.captionBookmarkID).setInnerHtml(bookmarkString).createSpan();
+        const bookmarkElem = factory.setId(this.captionBookmarkID).setClass(this.popupClass).setInnerHtml(bookmarkString).createSpan();
         //閲覧数
         const viewString = `${this.viewIcon}${json.body.viewCount}`;
-        const viewElem = factory.setId(this.captionViewID).setInnerHtml(viewString).createSpan();
+        const viewElem = factory.setId(this.captionViewID).setClass(this.popupClass).setInnerHtml(viewString).createSpan();
         //infoコンテナに各elementを詰める
         const infoElem = factory
             .setId(this.captionInfoID)
-            .initHtml()
+            .setClass(this.popupClass)
             .setCSS(this.infoContainerCSS)
             .createDiv();
         infoElem.appendChild(dateElem);
@@ -1078,19 +1048,15 @@ class PopupUtil {
         captionContainer.appendChild(descriptionElem);
         captionContainer.appendChild(tagElem);
         captionContainer.appendChild(infoElem);
-        //表示位置を調整
-        captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
-        captionContainer.style.width = outerContainer.style.width;
-        //表示位置を調整
-        const offset = this.getOffset(outerContainer);
-        outerContainer.style.top = offset.top + 'px';
-        outerContainer.style.left = offset.left + 'px';
     }
     /**
      * タグ情報を格納したHTMLelementを作成する
      */
     getTagHtml(json) {
         let outerTagElem = document.createElement('ul');
+        // @ts-ignore
+        outerTagElem.style.paddingInlineStart = '0px';
+        //outerTagElem.setAttribute('align','left')
         for (const tagJson of json.body.tags.tags) {
             let iconElem = document.createElement('a');
             iconElem.className = `${tagJson.romaji || tagJson.locked ? "popup-pixpedia-icon" : "popup-pixpedia-no-icon"}`;
@@ -1102,16 +1068,6 @@ class PopupUtil {
             outerTagElem.appendChild(innerTagElem);
         }
         return outerTagElem;
-    }
-    /**
-     * elementを削除する
-     * @param id
-     */
-    deleteElementById(id) {
-        const elem = document.getElementById(id);
-        if (elem != null) {
-            elem.parentNode.removeChild(elem);
-        }
     }
     /**
      * 漫画をポップアップする
@@ -1126,7 +1082,7 @@ class PopupUtil {
         innerContainer.innerHTML = '';
         const factory = new ContainerFactory_1.ContainerFactory();
         const mangaContainer = factory.setId(this.mangaContainerID)
-            .initHtml()
+            .setClass(this.popupClass)
             .setCSS(this.mangaContainerCSS)
             .createDiv();
         innerContainer.appendChild(mangaContainer);
@@ -1141,10 +1097,16 @@ class PopupUtil {
         this.imgsArrInit(innerContainer, mangaContainer, manga, this.getImgUrl(json), count);
         outerContainer.style.width = innerContainer.style.maxWidth;
         outerContainer.style.height = innerContainer.style.maxHeight;
-        innerContainer.style.width = innerContainer.style.maxWidth;
-        innerContainer.style.height = innerContainer.style.maxHeight;
+        /*
+        outerContainer.style.width = innerContainer.style.maxWidth
+        outerContainer.style.height = innerContainer.style.maxHeight
+        innerContainer.style.width = innerContainer.style.maxWidth
+        innerContainer.style.height = innerContainer.style.maxHeight
+
         mangaContainer.style.display = 'block';
         innerContainer.style.display = 'block';
+
+*/
         //スクロールをセット
         this.setScrool(innerContainer, mangaContainer, manga);
     }
@@ -1203,14 +1165,15 @@ class PopupUtil {
         }
         return $(elem).parent().find('a')[0];
     }
-    async popupUgoira(outerContainer, hrefElem, pixivJson, ugoiraMetaJson) {
+    async popupUgoira(outerContainer, hrefElem, pixivJson, ugoiraMetaJson, scale) {
         const innerContainer = document.getElementById(this.innerContainerID);
         innerContainer.innerHTML = '';
         let finished = false;
         const factory = new ContainerFactory_1.ContainerFactory();
         innerContainer.textContent = null;
-        const ugoiraContainer = factory.setId('ugoiraContainer')
-            .initHtml()
+        const ugoiraContainer = factory
+            .setId(this.ugoiraContainerID)
+            .setClass(this.popupClass)
             .createDiv();
         innerContainer.appendChild(ugoiraContainer);
         let myHeaders = new Headers();
@@ -1259,7 +1222,7 @@ class PopupUtil {
         }).then(() => {
             //innerContainer.appendChild(ImgElem);
             const canvas = document.createElement('canvas');
-            const size = this.resize(pixivJson.body.width, pixivJson.body.height);
+            const size = this.resize(pixivJson.body.width, pixivJson.body.height, scale);
             canvas.width = size.width;
             canvas.height = size.height;
             outerContainer.style.width = `${size.width}px`;
@@ -1268,12 +1231,12 @@ class PopupUtil {
             innerContainer.style.height = `${size.height}px`;
             ugoiraContainer.appendChild(canvas);
             $(innerContainer).css("background", "rgb(34, 34, 34)");
-            ugoiraContainer.style.display = 'block';
-            innerContainer.style.display = 'block';
+            // ugoiraContainer.style.display = 'block';
+            //innerContainer.style.display = 'block';
             //表示位置を調整
-            const captionContainer = document.getElementById(this.captionContainerID);
-            captionContainer.style.width = `${size.width}px`;
-            captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
+            //  const captionContainer=document.getElementById(this.captionContainerID)
+            // captionContainer.style.width=`${size.width}px`
+            // captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
             const frameArray = ugoira.getFrameArray;
             const stringArray = ugoira.getImgStringArray;
             let index = 0;
@@ -1300,12 +1263,12 @@ class PopupUtil {
     isUgoira(json) {
         return json.body.illustType === 2;
     }
-    resize(width, height) {
+    resize(width, height, scale) {
         let newHeight = height;
         let newWidth = width;
-        if (height > window.innerHeight * 0.8 || width > window.innerWidth * 0.8) {
-            const heightScale = height / Number(window.innerHeight * 0.8);
-            const widthScale = width / Number(window.innerWidth * 0.8);
+        if (height > window.innerHeight * scale || width > window.innerWidth * scale) {
+            const heightScale = height / Number(window.innerHeight * scale);
+            const widthScale = width / Number(window.innerWidth * scale);
             if (heightScale > widthScale) {
                 newHeight /= heightScale;
                 newWidth /= heightScale;
@@ -1316,6 +1279,69 @@ class PopupUtil {
             }
         }
         return { width: Math.round(newWidth), height: Math.round(newHeight) };
+    }
+    addMouseMove(elm) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        let dragging = false;
+        const elementDrag = (e) => {
+            dragging = true;
+            e = e || window.event;
+            e.preventDefault();
+            // calculate the new cursor position:
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            // set the element's new position:
+            elm.style.top = (elm.offsetTop - pos2) + "px";
+            elm.style.left = (elm.offsetLeft - pos1) + "px";
+        };
+        const closeDragElement = () => {
+            // stop moving when mouse button is released:
+            document.onmouseup = null;
+            document.onmousemove = null;
+            if (!dragging) {
+                this.cleanContainer(elm);
+            }
+            dragging = false;
+        };
+        const dragMouseDown = (e) => {
+            e = e || window.event;
+            e.preventDefault();
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            // call a function whenever the cursor moves:
+            document.onmousemove = elementDrag;
+        };
+        elm.onmousedown = dragMouseDown;
+        elm.onmouseleave = () => {
+            this.cleanContainer(elm);
+        };
+    }
+    cleanContainer(outerContainer) {
+        const innerContainer = document.getElementById(this.innerContainerID);
+        const captionContainer = document.getElementById(this.captionContainerID);
+        innerContainer.innerText = '';
+        captionContainer.innerText = '';
+        outerContainer.style.display = 'none';
+    }
+    adjustCaption() {
+        //画面の表示調節を行う
+        const innerContainer = document.getElementById(this.innerContainerID);
+        const outerContainer = document.getElementById(this.outerContainerID);
+        const captionContainer = document.getElementById(this.captionContainerID);
+        const descriptionContainer = document.getElementById(this.captionDescriptionID);
+        const tagContainer = document.getElementById(this.captionTagID);
+        const infoContainer = document.getElementById(this.captionInfoID);
+        if (descriptionContainer.clientHeight > 100) {
+            descriptionContainer.style.height = `${100}px`;
+        }
+        const offset = this.getOffset(outerContainer);
+        outerContainer.style.left = `${offset.left}px`;
+        outerContainer.style.top = `${offset.top}px`;
+        captionContainer.style.width = `${outerContainer.offsetWidth + 10}px`;
     }
 }
 exports.PopupUtil = PopupUtil;
@@ -1388,7 +1414,7 @@ window.onload = () => {
     const links = document.getElementsByTagName('a');
     for (const link of links) {
         link.addEventListener('click', () => {
-            const newPageExecute = util.onloadExecute(setting, new page_1.Page(document.URL));
+            util.onloadExecute(setting, new page_1.Page(document.URL));
         });
     }
     setting.save();

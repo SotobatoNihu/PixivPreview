@@ -12,6 +12,7 @@ export class Setting {
     changeMemberPageLayout=true
     openComment=true
     popup=true
+    popupScale=0.7
     uiComponent: Array<any>;
 
 
@@ -23,7 +24,9 @@ export class Setting {
                 this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout
                 this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout
                 this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
+
                 this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+                this.popupScale = (jsonData.popupScale == null) ? 0.7 : jsonData.popupScale
             }
             }
         )
@@ -35,6 +38,7 @@ export class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+        this.popupScale = (jsonData.popup == null) ? 0.7 : jsonData.popupScale;
         this.uiComponent = [uiComponent.image, uiComponent.manga,uiComponent.ugoira, uiComponent.caption]
     }
 
@@ -43,6 +47,7 @@ export class Setting {
         this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.popup = (jsonData.popup == null) ? true : jsonData.popup;
+        this.popupScale = (jsonData.popup == null) ? 0.7 : jsonData.popupScale;
     }
 
     get getJsonString(): string {
@@ -51,6 +56,7 @@ export class Setting {
             changeMemberPageLayout: this.changeMemberPageLayout,
             openComment: this.openComment,
             popup: this.popup,
+            popupScale: this.popupScale,
         }
         return JSON.stringify(obj)
     }

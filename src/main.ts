@@ -26,7 +26,7 @@ window.onload = () => {
     const links = document.getElementsByTagName('a')
     for (const link of links) {
         link.addEventListener('click', () => {
-            const newPageExecute = util.onloadExecute(setting, new Page(document.URL));
+            util.onloadExecute(setting, new Page(document.URL));
         })
     }
     setting.save()

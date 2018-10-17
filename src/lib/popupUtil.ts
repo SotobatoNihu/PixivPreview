@@ -11,7 +11,6 @@ import {Ugoira} from "./ugoira";
  */
 
 export class PopupUtil {
-
     //キャプションに表示するアイコン群
     private likeIcon: string = `<img src="https://s.pximg.net/www/js/spa/260127df5fe9ade778ec4be463deaf01.svg" width="12" height="12">`
     private bookmarkIcon: string = `<svg viewBox="0 0 12 12" width="12" height="12" class="css-1hamw6p e1rs6xf14"><path fill="currentColor" d="
@@ -27,51 +26,62 @@ export class PopupUtil {
     private outerContainerID: string='popup-outer-container'
     private imgContainerID:string='popup-img'
     private mangaContainerID:string='popup-manga'
+    private ugoiraContainerID:string='popup-ugoira'
     private captionContainerID: string = 'popup-caption-container'
-    private captionTextID: string = 'popup-caption-text'
+    private captionDescriptionID: string = 'popup-caption-text'
     private captionTagID: string='popup-caption-tag'
     private captionDateID: string='popup-caption-date'
     private captionLikeID: string='popup-caption-like'
     private captionBookmarkID: string='popup-caption-bookmark'
     private captionViewID: string='popup-caption-view'
     private captionInfoID: string='popup-caption-infomation'
+    private popupClass: string='popup-util'
 
     //各種elementのcss
     private mangaContainerCSS: string
-        = `display:block;
-            background-color:black;
-            overflow-x:auto;
-            white-space:nowrap;
+        = ` background-color:black;
+           overflow-x:auto;
+           white-space:nowrap;
+           width: auto; 
+           height:auto;
+           left: 0;
+           top: 0;
             `
+    private infoContainerCSS = `
+        background-color:white;
+        font-size:xx-small;
+        width: auto;
+        color:rgb(173, 173, 173); 
+        line-height=1;`;
     private imgContainerCSS: string
-        = `width: auto; 
-          height:auto;
+        = `width: 100%; 
+          height:100%;
           left: 0;
           top: 0;
-            display:block;
+          background-size: contain;
+          background-position:center; 
+          background-repeat:no-repeat;
             `
-    private infoContainerCSS: string
-        = `font-size: 12px; 
-          left: 0;
-          top: 0;
-            color:rgb(173, 173, 173); 
-            line-height=1;`
-
+    private descriptionContainerCSS: string
+        = `font-size: normal; 
+          width: auto; 
+          height:auto;
+          overflow-y:scroll;`
 
 
     pixpediaCSS(innerContainer: HTMLElement): string {
         return `
         white-space:pre-wrap;
-        display:block;
-        z-index:1001;
-        position:absolute;
+        font-size:small; 
+        z-index:10001;
+        position:relative;
         border: 1px solid black;
         max-width:${innerContainer.clientWidth + 10}px;
         background-color:white;
         word-wrap:break-word;
         word-break:break-all;
-        left:${innerContainer.style.left}px;
-        width:${innerContainer.clientWidth + 10}px;
+        left:auto;
+        width:auto;
         `
     }
 
@@ -85,19 +95,20 @@ export class PopupUtil {
      * @param elem
      * @param json
      */
-    popupImg(page: Page, outerContainer: HTMLElement, elem: HTMLElement, json: PixivJson) {
+    popupImg(page: Page, outerContainer: HTMLElement, elem: HTMLElement, json: PixivJson,scale:number) {
         const innerContainer:HTMLElement=document.getElementById(this.innerContainerID)
         //中身を綺麗にする
         innerContainer.innerHTML= ''
 
         const factory = new ContainerFactory()
         const imgElement = factory.setId(this.imgContainerID)
-            .initHtml()
+            .setClass(this.popupClass)
             .setCSS(this.imgContainerCSS)
-            .createImg()
+            .createDiv()
 
         innerContainer.appendChild(imgElement);
-        imgElement.src = this.getImgUrl(json)
+       // imgElement.src = this.getImgUrl(json)
+        imgElement.style.backgroundImage=`url(${json.body.urls.regular})`
 
         if ($(elem).hasClass("on")) {
             innerContainer.style.border = '5px solid rgb(255, 64, 96)'
@@ -109,25 +120,18 @@ export class PopupUtil {
         }
 
         //大きすぎる場合はリサイズする
-        const resize = this.resize(json.body.width, json.body.height,)
+        const resize = this.resize(json.body.width, json.body.height,scale)
         let imgHeight = resize.height
         let imgWidth = resize.width
-
-        imgElement.style.width = `${imgWidth}px`
-        imgElement.style.height = `${imgHeight}px`
         outerContainer.style.width = `${imgWidth}px`
         outerContainer.style.height = `${imgHeight}px`
-        innerContainer.style.width = `${imgWidth}px`
-        innerContainer.style.height = `${imgHeight}px`
-        innerContainer.style.display = 'block';
-
     }
 
     /**
      * 大きさがあるHTMLelementを引数に、それが画面の中央に表示されるようになるelementのtop・leftの値を返す
      * @param elem
      */
-    private getOffset(elem: HTMLElement): { top: number; left: number } {
+     getOffset(elem: HTMLElement): { top: number; left: number } {
         const w_height = $(window).height();
         const w_width = $(window).width();
         const el_height = $(elem).height();
@@ -144,21 +148,22 @@ export class PopupUtil {
      * @param innerContainer
      * @param json
      */
-    popupCaption(outerContainer: HTMLElement, json: PixivJson) {
+   popupCaption(outerContainer: HTMLElement, json: PixivJson) {
         const captionContainer:HTMLElement=document.getElementById(this.captionContainerID)
        const innerContainer:HTMLElement=document.getElementById(this.innerContainerID)
 
         //既存のキャプションコンテナがあれば破棄
         captionContainer.innerText=''
-       // this.cleanElementById(this.captionContainerID)
 
         //テキストコンテナを作成
         const factory = new ContainerFactory()
-        const descriptionElem: HTMLElement = factory.setId(this.captionTextID)
+        const descriptionElem: HTMLElement = factory.setId(this.captionDescriptionID)
+            .setClass(this.popupClass)
+            .setCSS(this.descriptionContainerCSS)
             .setInnerHtml(json.body.description)
             .createDiv()
         const tagElem: HTMLElement = factory.setId(this.captionTagID)
-            .initHtml()
+            .setClass(this.popupClass)
             .createDiv()
         tagElem.appendChild(this.getTagHtml(json))
 
@@ -167,23 +172,24 @@ export class PopupUtil {
         const dateString: string = `upload:${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
         const dateElem: HTMLElement = factory.setId(this.captionDateID).setInnerHtml(dateString).createDiv()
 
+
         //like数
         const likeString: string = `${this.likeIcon} ${json.body.likeCount} `
-        const likeElem: HTMLElement = factory.setId(this.captionLikeID).setInnerHtml(likeString).createSpan()
+        const likeElem: HTMLElement = factory.setId(this.captionLikeID).setClass(this.popupClass).setInnerHtml(likeString).createSpan()
 
         //ブックマーク数
         const bookmarkString: string = `${this.bookmarkIcon} ${json.body.bookmarkCount} `
-        const bookmarkElem: HTMLElement = factory.setId(this.captionBookmarkID).setInnerHtml(bookmarkString).createSpan()
+        const bookmarkElem: HTMLElement = factory.setId(this.captionBookmarkID).setClass(this.popupClass).setInnerHtml(bookmarkString).createSpan()
 
         //閲覧数
         const viewString: string = `${this.viewIcon}${json.body.viewCount}`
-        const viewElem: HTMLElement = factory.setId(this.captionViewID).setInnerHtml(viewString).createSpan()
+        const viewElem: HTMLElement = factory.setId(this.captionViewID).setClass(this.popupClass).setInnerHtml(viewString).createSpan()
 
 
         //infoコンテナに各elementを詰める
         const infoElem: HTMLElement = factory
             .setId(this.captionInfoID)
-            .initHtml()
+            .setClass(this.popupClass)
             .setCSS(this.infoContainerCSS)
             .createDiv()
 
@@ -198,13 +204,6 @@ export class PopupUtil {
         captionContainer.appendChild(tagElem)
         captionContainer.appendChild(infoElem)
 
-        //表示位置を調整
-        captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
-        captionContainer.style.width = outerContainer.style.width;
-        //表示位置を調整
-        const offset = this.getOffset(outerContainer)
-        outerContainer.style.top = offset.top + 'px'
-        outerContainer.style.left = offset.left + 'px'
     }
 
     /**
@@ -212,6 +211,9 @@ export class PopupUtil {
      */
     private getTagHtml(json: PixivJson): HTMLElement {
         let outerTagElem: HTMLElement = document.createElement('ul')
+        // @ts-ignore
+        outerTagElem.style.paddingInlineStart='0px'
+        //outerTagElem.setAttribute('align','left')
 
         for (const tagJson of json.body.tags.tags) {
             let iconElem: HTMLElement = document.createElement('a')
@@ -224,17 +226,6 @@ export class PopupUtil {
             outerTagElem.appendChild(innerTagElem)
         }
         return outerTagElem
-    }
-
-    /**
-     * elementを削除する
-     * @param id
-     */
-    private deleteElementById(id: string) {
-        const elem = document.getElementById(id)
-        if (elem != null) {
-            elem.parentNode.removeChild(elem);
-        }
     }
 
     /**
@@ -251,7 +242,7 @@ export class PopupUtil {
 
         const factory = new ContainerFactory()
         const mangaContainer = factory.setId(this.mangaContainerID)
-            .initHtml()
+            .setClass(this.popupClass)
             .setCSS(this.mangaContainerCSS)
             .createDiv()
 
@@ -269,6 +260,9 @@ export class PopupUtil {
         //各ページをセット
         this.imgsArrInit(innerContainer, mangaContainer, manga, this.getImgUrl(json), count);
 
+       outerContainer.style.width = innerContainer.style.maxWidth
+        outerContainer.style.height = innerContainer.style.maxHeight
+        /*
         outerContainer.style.width = innerContainer.style.maxWidth
         outerContainer.style.height = innerContainer.style.maxHeight
         innerContainer.style.width = innerContainer.style.maxWidth
@@ -277,6 +271,7 @@ export class PopupUtil {
         mangaContainer.style.display = 'block';
         innerContainer.style.display = 'block';
 
+*/
         //スクロールをセット
         this.setScrool(innerContainer, mangaContainer, manga)
     }
@@ -345,7 +340,7 @@ export class PopupUtil {
     }
 
 
-    async popupUgoira(outerContainer: HTMLElement, hrefElem: HTMLElement, pixivJson: PixivJson, ugoiraMetaJson: PixivJson) {
+    async popupUgoira(outerContainer: HTMLElement, hrefElem: HTMLElement, pixivJson: PixivJson, ugoiraMetaJson: PixivJson,scale:number) {
         const innerContainer:HTMLElement=document.getElementById(this.innerContainerID)
         innerContainer.innerHTML= ''
 
@@ -353,8 +348,9 @@ export class PopupUtil {
         const factory = new ContainerFactory()
 
         innerContainer.textContent = null;
-        const ugoiraContainer = factory.setId('ugoiraContainer')
-            .initHtml()
+        const ugoiraContainer = factory
+            .setId(this.ugoiraContainerID)
+            .setClass(this.popupClass)
             .createDiv()
         innerContainer.appendChild(ugoiraContainer);
 
@@ -418,7 +414,7 @@ export class PopupUtil {
 
             //innerContainer.appendChild(ImgElem);
             const canvas = document.createElement('canvas')
-            const size = this.resize(pixivJson.body.width, pixivJson.body.height)
+            const size = this.resize(pixivJson.body.width, pixivJson.body.height,scale)
             canvas.width = size.width
             canvas.height = size.height
             outerContainer.style.width = `${size.width}px`
@@ -429,13 +425,13 @@ export class PopupUtil {
 
             $(innerContainer).css("background", "rgb(34, 34, 34)");
 
-            ugoiraContainer.style.display = 'block';
-            innerContainer.style.display = 'block';
+           // ugoiraContainer.style.display = 'block';
+            //innerContainer.style.display = 'block';
 
             //表示位置を調整
-            const captionContainer=document.getElementById(this.captionContainerID)
-            captionContainer.style.width=`${size.width}px`
-            captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
+          //  const captionContainer=document.getElementById(this.captionContainerID)
+           // captionContainer.style.width=`${size.width}px`
+           // captionContainer.style.top = `${-captionContainer.getBoundingClientRect().height}px`;
 
                 const frameArray = ugoira.getFrameArray
                 const stringArray = ugoira.getImgStringArray
@@ -473,12 +469,12 @@ export class PopupUtil {
         return json.body.illustType === 2
     }
 
-    private resize(width: number, height: number,) {
+    private resize(width: number, height: number,scale:number) {
         let newHeight:number = height
         let newWidth:number = width
-        if (height > window.innerHeight * 0.8 || width > window.innerWidth * 0.8) {
-            const heightScale =height / Number(window.innerHeight * 0.8)
-            const widthScale = width / Number(window.innerWidth * 0.8)
+        if (height > window.innerHeight * scale || width > window.innerWidth * scale) {
+            const heightScale =height / Number(window.innerHeight * scale)
+            const widthScale = width / Number(window.innerWidth * scale)
             if (heightScale > widthScale) {
                 newHeight  /= heightScale
                 newWidth /= heightScale
@@ -489,4 +485,76 @@ export class PopupUtil {
         }
         return {width: Math.round(newWidth), height: Math.round(newHeight)}
     }
+
+    public addMouseMove(elm: HTMLElement) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        let dragging=false
+        const elementDrag=(e)=> {
+            dragging=true
+            e = e || window.event;
+            e.preventDefault();
+            // calculate the new cursor position:
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            // set the element's new position:
+            elm.style.top = (elm.offsetTop - pos2) + "px";
+            elm.style.left = (elm.offsetLeft - pos1) + "px";
+        }
+
+
+        const closeDragElement=()=> {
+            // stop moving when mouse button is released:
+            document.onmouseup = null;
+            document.onmousemove = null;
+            if(!dragging){
+                this.cleanContainer(elm)
+            }
+            dragging=false
+        }
+       const dragMouseDown=(e)=> {
+            e = e || window.event;
+            e.preventDefault();
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            // call a function whenever the cursor moves:
+            document.onmousemove = elementDrag;
+        }
+
+        elm.onmousedown = dragMouseDown;
+        elm.onmouseleave = () => {
+            this.cleanContainer(elm)
+        };
+    }
+
+    cleanContainer(outerContainer) {
+        const innerContainer= document.getElementById(this.innerContainerID)
+        const captionContainer= document.getElementById(this.captionContainerID)
+        innerContainer.innerText=''
+        captionContainer.innerText=''
+        outerContainer.style.display = 'none';
+    }
+
+    adjustCaption() {
+        //画面の表示調節を行う
+        const innerContainer: HTMLElement=document.getElementById(this.innerContainerID)
+        const outerContainer: HTMLElement=document.getElementById(this.outerContainerID)
+        const captionContainer=document.getElementById(this.captionContainerID)
+        const descriptionContainer:HTMLElement=document.getElementById(this.captionDescriptionID)
+        const tagContainer:HTMLElement=document.getElementById(this.captionTagID)
+        const infoContainer:HTMLElement=document.getElementById(this.captionInfoID)
+
+        if (descriptionContainer.clientHeight>100){
+            descriptionContainer.style.height=`${100}px`
+        }
+
+        const offset=this.getOffset(outerContainer)
+        outerContainer.style.left=`${offset.left}px`
+        outerContainer.style.top=`${offset.top}px`
+        captionContainer.style.width=`${outerContainer.offsetWidth+10}px`
+    }
+
 }

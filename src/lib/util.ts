@@ -16,16 +16,45 @@ export class Util {
     private innerContainerID: string='popup-inner-container'
     private outerContainerID: string='popup-outer-container'
     private captionContainerID: string = 'popup-caption-container'
+    private popupClass: string='popup-util'
     //あとで各要素やドキュメントに挿入するCSS文字列
-    private innerContainerCSS: string = `
+    private outerContainerCSS: string = `
         position:absolute;
-        display:block;
-        z-index:1000;
+        z-index:10000;
+        background-color:#FFF;
+        border: 1px solid black;
+        max-width:${window.innerWidth }px;
+        max-height:${window.innerHeight }px;
+        `
+
+      innerContainerCSS(scale:number){
+        return `
         border: 5px solid black;
         background-color:#111;
-        max-width:${window.innerWidth * 0.8}px;
-        max-height:${window.innerHeight * 0.8}px;
+        position:relative;
+        width:100%;
+        height:100%;
+        float:left;
+        max-width:${window.innerWidth * scale}px;
+        max-height:${window.innerHeight * scale}px;
         `
+    }
+    private captionContainerCSS: string =
+        `
+        white-space:pre-wrap;
+        z-index:10001;
+        position:relative;
+       
+        width:auto;
+        height:auto;
+        max-width:${window.innerWidth }px;
+        max-height:${window.innerHeight}px;
+        background-color:white;
+        word-wrap:break-word;
+        word-break:break-all;
+        
+        `
+
     private gearCSS: string =
         `width: 25px; 
          height: 25px;
@@ -90,21 +119,8 @@ export class Util {
      background: url(https://s.pximg.net/www/images/inline/pixpedia-no-item.png) no-repeat;
 }
      `
-    private captionContainerCSS: string =
-         `
-        white-space:pre-wrap;
-        display:block;
-        z-index:1001;
-        position:absolute;
-        border: 1px solid black;
-         max-width:${window.innerWidth * 0.8}px;
-        background-color:white;
-        word-wrap:break-word;
-        word-break:break-all;
-        `
 
-
-    private utilIcon: string = 'pixiv-view-util-icon'
+    private utilIcon: string = 'pixiv-view-util-gear'
 
     /**
      * とりあえずやっておくこと。
@@ -114,20 +130,14 @@ export class Util {
      * @param page
      */
     async initExecute(setting: Setting, page: Page) {
-        if (page.pagetype == pagetype.top && document.getElementById('pixiv-view-util-gear') === null) {
+        if (page.pagetype == pagetype.top && document.getElementById(this.utilIcon) === null) {
             this.setConfigDialog()
         }
-        if (setting.popup && page.isEnable(prop.popup_typeA)) {
+
+        if (setting.popup && (page.isEnable(prop.popup_typeA))|| page.isEnable(prop.popup_typeB)){
             this.setPopup(page, setting);
-            console.log("set popup typeA");
+            console.log("set popup");
         }
-        else if (setting.popup && page.isEnable(prop.popup_typeB)) {
-            this.setPopup(page, setting);
-            console.log("set popup typeB");
-        }
-
-
-
     }
 
     /**
@@ -248,32 +258,35 @@ export class Util {
         //IDやCSSなどをセットしたHTML要素を作成
         const factory = new ContainerFactory()
         //ポップアップの外枠となるouterContainer
-        const outerContainer: HTMLElement = factory.setId(this.outerContainerID)
-            .initHtml()
+        const outerContainer: HTMLElement = factory
+            .setId(this.outerContainerID)
+            .setClass(this.popupClass)
+            .setCSS(this.outerContainerCSS)
             .createDiv()
-        outerContainer.style.position='absolute'
 
-        const innerContainer: HTMLElement = factory.setId(this.innerContainerID)
-            .setCSS(this.innerContainerCSS)
-            .initHtml()
+        const innerContainer: HTMLElement = factory
+            .setId(this.innerContainerID)
+            .setClass(this.popupClass)
+            .setCSS(this.innerContainerCSS(setting.popupScale))
             .createDiv()
-        innerContainer.draggable = true
 
-        const captionContainer: HTMLElement = factory.setId(this.captionContainerID)
+        const captionContainer: HTMLElement = factory
+            .setId(this.captionContainerID)
+            .setClass(this.popupClass)
             .setCSS(this.captionContainerCSS)
-            .initHtml()
             .createDiv()
-        captionContainer.draggable = true
 
         outerContainer.appendChild(captionContainer)
         outerContainer.appendChild(innerContainer)
         document.body.appendChild(outerContainer)
+
 
         //ドキュメントにCSSを登録
         const style = document.createElement('style');
         style.textContent = this.pixpediaItemCSS
         document.getElementsByTagName('head')[0].appendChild(style);
 
+        const classname=this.popupClass
 
         // イラスト＆漫画のクリックイベントを登録する
         $('body').on('mouseenter', 'a[href*="member_illust.php?mode=medium&illust_id="]', function () {
@@ -311,9 +324,6 @@ export class Util {
                 }).then(async function (json) {
                     //pixivJsonオブジェクトに格納
                     const pixivJson = new PixivJson(json);
-                    // const mouseX=e.pageX
-                    //const mouseY=e.pageY
-
 
                     //漫画のポップアップを実行
                     if (popupUtil.isManga(pixivJson)) {
@@ -323,51 +333,40 @@ export class Util {
                     else if (popupUtil.isIllust(pixivJson)) {
 
                         //イラストのポップアップを実行
-                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
+                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson,setting.popupScale);
                     } else {
                         //うごイラのポップアップを実行
                         //うごイラは通常のイラストのポップアップ手順でも正常動作する
-                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson);
-
+                        popupUtil.popupImg(page, outerContainer, hrefElem, pixivJson,setting.popupScale);
 
                         //うごイラのメタ情報のJSONを入手
                         await fetch(`https://www.pixiv.net/ajax/illust/${pixivJson.body.illustId}/ugoira_meta`)
                             .then(function (response) {
                                 return response.json();
                             }).then(json => {
-                                popupUtil.popupUgoira(outerContainer, hrefElem, pixivJson, new PixivJson(json)).then(result => console.log(result))
+                                popupUtil.popupUgoira(outerContainer, hrefElem, pixivJson, new PixivJson(json),setting.popupScale).then(result => console.log(result))
                             })
 
                     }
+
                     //キャプションのポップアップを実行
                     popupUtil.popupCaption(outerContainer, pixivJson);
+                    popupUtil.adjustCaption()
+                    popupUtil.addMouseMove(outerContainer)
+
                 });
             })
         })
 
-        this.addMouseMove(outerContainer)
 
+
+
+        window.onresize = function () {
+            outerContainer.style.maxWidth = `${window.innerWidth * setting.popupScale}px`;
+        };
     }
 
-    private cleanContainer(outerContainer) {
 
-        const innerContainer= document.getElementById(this.innerContainerID)
-        const captionContainer= document.getElementById(this.captionContainerID)
-        innerContainer.innerText=''
-        captionContainer.innerText=''
-        outerContainer.style.display = 'none';
-        /*
-        const childContainer=outerContainer.childNodes
-        for(let container of childContainer){
-            container.innerText=''
-        }
-
-
-       document.getElementById(this.innerContainerID).innerText=''
-        document.getElementById(this.captionContainerID).innerText=''
-        document.getElementById(this.outerContainerID).style.display = 'none';
-*/
-    }
 
     private static getUserID(json: PixivJson): string {
         return json.body.tags.authorId
@@ -523,69 +522,4 @@ export class Util {
 
     }
 
-    private addMouseMove(elem: HTMLElement) {
-        let is_dragging=false
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        elem.onmouseleave = () => {
-            this.cleanContainer(elem)
-        };
-
-        elem.onmouseup= () => {
-            if(!is_dragging) {
-                this.cleanContainer(elem)
-            }
-        }
-
-        window.onresize = function () {
-            elem.style.maxWidth = `${window.innerWidth * 0.8}px`;
-        };
-
-        function changeOffset(elem,pos1,pos2){
-            is_dragging=true
-            elem.style.top = (elem.offsetTop - pos2) + "px";
-            elem.style.left = (elem.offsetLeft - pos1) + "px";
-            if(elem.children().length>0){
-                for(let child of elem.children()){
-                    changeOffset(child,pos1,pos2)
-            }
-            }
-        }
-        function elementDrag(e) {
-            is_dragging=true
-            e = e || window.event;
-            e.preventDefault();
-            // calculate the new cursor position:
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            // set the element's new position:
-
-            changeOffset(elem,pos1,pos2)
-
-
-        }
-
-        function closeDragElement() {
-            // stop moving when mouse button is released:
-            document.onmouseup = null;
-            document.onmousemove = null;
-            is_dragging=false
-        }
-        function dragMouseDown(e) {
-            e = e || window.event;
-            e.preventDefault();
-            // get the mouse cursor position at startup:
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            // call a function whenever the cursor moves:
-            document.onmousemove = elementDrag;
-        }
-
-        elem.onmousedown = dragMouseDown;
-        document.onmousemove = elementDrag;
-
-    }
-    
 }
