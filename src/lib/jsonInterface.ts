@@ -94,6 +94,8 @@ export interface Translation {
 export interface Frame {
     file: string;
     delay: number;
+
+
 }
 
 export interface Body {
