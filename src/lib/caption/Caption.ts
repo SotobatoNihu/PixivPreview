@@ -1,5 +1,6 @@
-import {PixivJson} from "./jsonInterface";
-import {ContainerFactory} from "./ContainerFactory";
+import {PixivJson} from "../others/jsonInterface";
+import {ContainerFactory} from "../utilities/ContainerFactory";
+import {Util} from "../utilities/Util";
 
 /**
  * html上のページごとのイラスト情報を管理する
@@ -163,15 +164,17 @@ export class Caption {
         this.className=className
     }
 
-    adjust(outerContainer:HTMLElement) {
+
+    adjustSize(outerContainer:HTMLElement) {
 
         this.descriptionElem.style.height= this.descriptionElem.clientHeight>100 ? `${100}px` : `${this.descriptionElem.clientHeight}px`
 
-        const offset=this.getOffset(outerContainer)
+        const offset=Util.getOffset(outerContainer)
         outerContainer.style.left=`${offset.left}px`
         outerContainer.style.top=`${offset.top}px`
 
         this.captionContainer.style.width=`${this.innerContainer.offsetWidth}px`
+        outerContainer.style.width=`${this.innerContainer.clientWidth}px`
         outerContainer.style.height=`${this.captionContainer.clientHeight+this.innerContainer.clientHeight}px`
     }
 

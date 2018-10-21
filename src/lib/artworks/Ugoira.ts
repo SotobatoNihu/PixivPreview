@@ -1,8 +1,9 @@
-import {Util} from "./util";
-import {prop} from "./enum";
-import {PixivJson} from "./jsonInterface";
+import {Util} from "../utilities/Util";
+import {prop} from "../others/Enum";
+import {PixivJson} from "../others/jsonInterface";
 import {Frame} from "./Frame";
-import {ContainerFactory} from "./ContainerFactory";
+import {ContainerFactory} from "../utilities/ContainerFactory";
+import {ArtWork} from "./ArtWork";
 
 /**
  * うごイラ管理用オブジェクト
@@ -81,34 +82,27 @@ export class Ugoira {
                 await zip.loadAsync(zipData, {base64: true})
             }
         ).then(
-            async () => {
-                for (let frame of frames) {
-                    frameData.pushDelay(frame.delay)
-                    //let frameArray:number[] = Ugoira.frameArray
-                   // frameArray.push(frame.delay)
-                    await zip.file(frame.file)
-                        .async("base64",
-                            function updateCallback(metadata) {
-                                console.log("progression: " + metadata.percent.toFixed(2) + " %");
-                                if (metadata.percent === 100) {
-                                    finished = true
-                                }
-                            }
-                        )
-                        .then(function success(content) {
-                            // pushImgString(`data:image/jpeg;base64,${content}`)
-                            frameData.pushImgString(`data:image/jpeg;base64,${content}`)
-                            //Ugoira.imgStringArray.push(`data:image/jpeg;base64,${content}`)
-                        }, function error(e) {
-                            console.log("download error.")
-                        })
-                }
+             () => {
+                 for(let i=0;i<frames.length;i++){
+                     zip.file(frames[i].file)
+                         .async("base64",
+                             function updateCallback(metadata) {
+                                 console.log("progression: " + metadata.percent.toFixed(2) + " %");
+                                 if (metadata.percent === 100) {
+                                     finished = true
+                                 }
+                             }
+                         )
+                         .then(function success(content) {
+                             frameData.pushImgString(`data:image/jpeg;base64,${content}`)
+                         }, function error(e) {
+                             console.log("download error.")
+                         })
 
+                 }
             }
         ).then(() => {
             this.frameData=frameData
-
-
         })
     }
 
@@ -179,11 +173,10 @@ export class Ugoira {
         }
     */
     resize(elem: HTMLElement, scale: number) {
-
         const oldWidth: number=this.pixivJson.body.width
         const oldHeight: number=this.pixivJson.body.height
-        let newWidth:number=oldHeight
-        let newHeight: number=oldWidth
+        let newWidth:number=oldWidth
+        let newHeight: number=oldHeight
         if (oldHeight > window.innerHeight * scale || oldWidth > window.innerWidth * scale) {
             const heightScale = oldHeight / Number(window.innerHeight * scale)
             const widthScale = oldWidth / Number(window.innerWidth * scale)
@@ -201,20 +194,21 @@ export class Ugoira {
         elem.style.height = `${Math.round(newHeight)}px`
     }
 
-    popup() {
+    popup(outerContainer:HTMLElement) {
         const frameArray =this.frameData.frameArray
         const stringArray = this.frameData.imgStringArray
-
+        const img = new Image();
         let index = 0;
         const counter = () => {
-            index += 1;
-            index = index === stringArray.length ? 0 : index
-            const img = new Image();
             img.src = stringArray[index]
             const context = this.ugoiraContainer.getContext('2d');
             //座標(10, 10)の位置にイメージを表示
             context.drawImage(img, 0, 0, this.ugoiraContainer.clientWidth, this.ugoiraContainer.clientHeight);
-            setTimeout(counter, frameArray[index]);
+            if(outerContainer.style.display!=='none'){
+                setTimeout(counter, this.ugoiraMetaJson.body.frames[index].delay);
+                index += 1;
+                index = index === stringArray.length ? 0 : index
+            }
         }
         counter();
     }
@@ -223,4 +217,3 @@ export class Ugoira {
         this.className=className
     }
 }
-

@@ -1,21 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const ContainerFactory_1 = require("./ContainerFactory");
+const ContainerFactory_1 = require("../utilities/ContainerFactory");
+const ArtWork_1 = require("./ArtWork");
 /**
  * html上のページごとの漫画情報を管理する
  */
-class Manga {
+class Manga extends ArtWork_1.ArtWork {
     constructor(pixivJson) {
+        super();
         this.mangaContainerID = 'popup-manga';
         this.pageNum = 0;
         //elementのcss
         this.mangaContainerCSS = ` background-color:black;
            overflow-x:auto;
            white-space:nowrap;
-           width: auto; 
+           width: 100%; 
            height:auto;
-           left: 0;
-           top: 0;
+           top:0;
+           left:0;
             `;
         this.pixivJson = pixivJson;
         this.pageNum = this.getPageNum(pixivJson);
@@ -27,6 +29,11 @@ class Manga {
             .createDiv();
         this.DELTASCALE = ('mozInnerScreenX' in window) ? 70 : 4;
     }
+    adjustScreenSize(scale) {
+        const innerScreen = this.innerScreen;
+        innerScreen.style.width = `${window.innerWidth * scale}px`;
+        innerScreen.style.height = `${window.innerHeight * scale}px`;
+    }
     /**
      * 漫画をポップアップする
      * @param innerContainer
@@ -35,29 +42,32 @@ class Manga {
      * @param count
      */
     popup(hasClass) {
-        this.innerContainer.innerHTML = '';
+        this.innerScreen.style.display = 'block';
+        this.innerScreen.style.width = `${Number(this.innerScreen.style.maxWidth) * this.imgScale}px`;
+        this.innerScreen.style.height = `${Number(this.innerScreen.style.maxHeight) * this.imgScale}px`;
+        this.innerScreen.innerHTML = '';
+        this.innerScreen.style.backgroundColor = (hasClass) ? "rgb(255, 64, 96)" : "rgb(34, 34, 34)";
         const firstPageURL = this.getImgUrl();
         //各ページをセット
         this.initImgArray(this.mangaContainer, firstPageURL);
-        this.innerContainer.style.backgroundColor = (hasClass) ? "rgb(255, 64, 96)" : "rgb(34, 34, 34)";
-        this.innerContainer.appendChild(this.mangaContainer);
-        this.setScrool(this.mangaContainer, this.innerContainer, this.DELTASCALE);
+        this.innerScreen.appendChild(this.mangaContainer);
+        this.setScrool(this.mangaContainer, this.innerScreen, this.DELTASCALE);
     }
     /**
-      * imgエレメントの配列を作成し漫画の各ページを格納
-      * @param innerContainer
-      * @param mangaContainer
-      * @param manga
-      * @param primaryLink
-      * @param pageNum
-      */
+     * imgエレメントの配列を作成し漫画の各ページを格納
+     * @param innerContainer
+     * @param mangaContainer
+     * @param manga
+     * @param primaryLink
+     * @param pageNum
+     */
     initImgArray(mangaContainer, firstPageURL) {
         for (let i = 0; i < this.pageNum; i++) {
             const imgElem = document.createElement('img');
             imgElem.src = firstPageURL.replace('p0', 'p' + i);
-            imgElem.style.maxWidth = this.innerContainer.style.maxWidth;
-            imgElem.style.maxHeight = this.innerContainer.style.maxHeight;
-            imgElem.style.height = this.innerContainer.style.maxHeight;
+            imgElem.style.maxWidth = this.innerScreen.style.width;
+            imgElem.style.maxHeight = this.innerScreen.style.height;
+            imgElem.style.height = this.innerScreen.style.height;
             imgElem.style.width = 'auto';
             this.imgArray.push(imgElem);
             mangaContainer.appendChild(imgElem);
@@ -92,14 +102,8 @@ class Manga {
         //url = url.replace(/\/...x...\//, '/600x600/'); //both feed and artist works case | TODO: '1200x1200' variant
         return this.pixivJson.body.urls.regular.replace(/\/...x...\//, '/600x600/');
     }
-    setInnerContainer(innerContainer) {
-        this.innerContainer = innerContainer;
-    }
     getPageNum(pixivJson) {
         return Number(pixivJson.body.pageCount);
-    }
-    setClassName(className) {
-        this.mangaContainer.className = className;
     }
 }
 exports.Manga = Manga;

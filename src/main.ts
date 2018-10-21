@@ -1,7 +1,7 @@
-import {Page} from './lib/page'
-import {prop, pagetype} from "./lib/enum";
-import {Util,} from './lib/util'
-import {Setting} from './lib/setting'
+import {Page} from './lib/others/Page'
+import {prop, pagetype} from "./lib/others/Enum";
+import {Util,} from './lib/utilities/Util'
+import {Setting} from './lib/others/Setting'
 
 'use strict';
 

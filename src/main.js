@@ -1,15 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const page_1 = require("./lib/page");
-const util_1 = require("./lib/util");
-const setting_1 = require("./lib/setting");
+const Page_1 = require("./lib/others/Page");
+const Util_1 = require("./lib/utilities/Util");
+const Setting_1 = require("./lib/others/Setting");
 'use strict';
 /**
  * メイン関数
  */
-const page = new page_1.Page(document.URL);
-const util = new util_1.Util();
-const setting = new setting_1.Setting();
+const page = new Page_1.Page(document.URL);
+const util = new Util_1.Util();
+const setting = new Setting_1.Setting();
 setting.init().then(() => {
     util.initExecute(setting, page);
 });
@@ -20,7 +20,7 @@ window.onload = () => {
     const links = document.getElementsByTagName('a');
     for (const link of links) {
         link.addEventListener('click', () => {
-            util.onloadExecute(setting, new page_1.Page(document.URL));
+            util.onloadExecute(setting, new Page_1.Page(document.URL));
         });
     }
     setting.save();
