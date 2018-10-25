@@ -13,7 +13,7 @@
 // @match           https://www.pixiv.net/bookmark.php*
 // @match           https://www.pixiv.net/search.php*
 // @match           https://www.pixiv.net*
-// @version         0.5.14-20181021
+// @version         0.5.15-20181025
 // @homepageURL     https://github.com/SotobatoNihu/PixivViewUtil
 // @license         MIT License
 // @require         https://code.jquery.com/jquery-3.2.1.min.js
@@ -93,7 +93,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 12);
+/******/ 	return __webpack_require__(__webpack_require__.s = 13);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -191,13 +191,14 @@ exports.ContainerFactory = ContainerFactory;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const Enum_1 = __webpack_require__(4);
-const Illust_1 = __webpack_require__(10);
-const Manga_1 = __webpack_require__(9);
-const Ugoira_1 = __webpack_require__(8);
-const Caption_1 = __webpack_require__(6);
+const Illust_1 = __webpack_require__(11);
+const Manga_1 = __webpack_require__(10);
+const Ugoira_1 = __webpack_require__(9);
+const Caption_1 = __webpack_require__(7);
 const Setting_1 = __webpack_require__(2);
 const ContainerFactory_1 = __webpack_require__(0);
-const jsonInterface_1 = __webpack_require__(5);
+const jsonInterface_1 = __webpack_require__(6);
+const CommentList_1 = __webpack_require__(5);
 /***
  * 各種ユーティリティ関数
  * ポップアップ機能に関するユーティリティ関数軍が長くなったため
@@ -556,6 +557,14 @@ class Util {
                         await caption.popup();
                         caption.adjustSize(outerContainer);
                     }
+                    if (setting.popupComment) {
+                        const commentList = new CommentList_1.CommentList(pixivJson);
+                        commentList.setCaptionContainer(captionContainer);
+                        commentList.setInnerContainer(innerContainer);
+                        commentList.setClassName(Util.popupClass);
+                        await commentList.popup();
+                        commentList.adjustSize(outerContainer);
+                    }
                     Util.adjustOffset(outerContainer);
                     Util.adjustSize(outerContainer, innerContainer, captionContainer);
                     Util.addMouseMove(outerContainer);
@@ -745,7 +754,8 @@ class Util {
     static addMouseMove(elm) {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         let dragging = false;
-        const elementDrag = (e) => {
+        //let scroll = false
+        const dragElement = (e) => {
             dragging = true;
             e = e || window.event;
             e.preventDefault();
@@ -767,20 +777,23 @@ class Util {
             }
             dragging = false;
         };
-        const dragMouseDown = (e) => {
+        const mouseDownEvent = (e) => {
             e = e || window.event;
-            e.preventDefault();
-            // get the mouse cursor position at startup:
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            // call a function whenever the cursor moves:
-            document.onmousemove = elementDrag;
+            // スクロールバーより内側の場合
+            if (e.offsetX <= e.target.clientWidth && e.offsetY <= e.target.clientHeight) {
+                e.preventDefault();
+                // get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // call a function whenever the cursor moves:
+                document.onmousemove = dragElement;
+                elm.onmouseleave = () => {
+                    this.cleanContainer(elm);
+                };
+            }
         };
-        elm.onmousedown = dragMouseDown;
-        elm.onmouseleave = () => {
-            this.cleanContainer(elm);
-        };
+        elm.onmousedown = mouseDownEvent;
     }
     removePopup() {
         const outerContainer = document.getElementById(Util.outerContainerID);
@@ -834,6 +847,7 @@ class Setting {
         this.openComment = true;
         this.usePopup = true;
         this.popupCaption = true;
+        this.popupComment = true;
         this.popupScale = 0.7;
         this.uiComponent = [Enum_1.uiComponent.image, Enum_1.uiComponent.manga, Enum_1.uiComponent.ugoira, Enum_1.uiComponent.caption];
     }
@@ -847,6 +861,7 @@ class Setting {
                 this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
                 this.usePopup = (jsonData.usePopup == null) ? true : jsonData.usePopup;
                 this.popupCaption = (jsonData.popupCaption == null) ? true : jsonData.popupCaption;
+                this.popupComment = (jsonData.popupComment == null) ? true : jsonData.popupComment;
                 this.popupScale = (jsonData.popupScale == null) ? 0.7 : jsonData.popupScale;
             }
         });
@@ -861,6 +876,7 @@ class Setting {
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.usePopup = (jsonData.usePopup == null) ? true : jsonData.usePopup;
         this.popupCaption = (jsonData.popupCaption == null) ? true : jsonData.popupCaption;
+        this.popupComment = (jsonData.popupComment == null) ? true : jsonData.popupComment;
         this.popupScale = (jsonData.usePopup == null) ? 0.7 : jsonData.popupScale;
     }
     get getJsonString() {
@@ -870,6 +886,7 @@ class Setting {
             openComment: this.openComment,
             usePopup: this.usePopup,
             popupCaption: this.popupCaption,
+            popupComment: this.popupComment,
             popupScale: this.popupScale,
         };
         return JSON.stringify(obj);
@@ -1013,6 +1030,36 @@ var pagetype;
 
 "use strict";
 
+Object.defineProperty(exports, "__esModule", { value: true });
+class CommentList {
+    constructor(pixivJson) {
+        this.commentListContainerID = 'popup-commentlist-container';
+        this.commentListContainerCSS = `
+        
+        
+        `;
+        this.pixivJson = pixivJson;
+    }
+    setCaptionContainer(captionContainer) {
+    }
+    setInnerContainer(innerContainer) {
+    }
+    setClassName(popupClass) {
+    }
+    popup() {
+    }
+    adjustSize(outerContainer) {
+    }
+}
+exports.CommentList = CommentList;
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 /**
  * Jsonをパースするときに使用する各種Json用クラス
  * http://json2ts.com/で自動生成
@@ -1028,7 +1075,7 @@ exports.PixivJson = PixivJson;
 
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1068,7 +1115,6 @@ class Caption {
         background-color:white;
         word-wrap:break-word;
         word-break:break-all;
-        
         `;
         this.descriptionContainerCSS = `font-size: normal; 
           width: auto; 
@@ -1194,7 +1240,7 @@ exports.Caption = Caption;
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1229,13 +1275,13 @@ exports.Frame = Frame;
 
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const Frame_1 = __webpack_require__(7);
+const Frame_1 = __webpack_require__(8);
 const ContainerFactory_1 = __webpack_require__(0);
 /**
  * うごイラ管理用オブジェクト
@@ -1417,7 +1463,7 @@ exports.Ugoira = Ugoira;
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1533,7 +1579,7 @@ exports.Manga = Manga;
 
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1598,7 +1644,7 @@ exports.Illust = Illust;
 
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1638,13 +1684,13 @@ exports.Page = Page;
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const Page_1 = __webpack_require__(11);
+const Page_1 = __webpack_require__(12);
 const Util_1 = __webpack_require__(1);
 const Setting_1 = __webpack_require__(2);
 'use strict';

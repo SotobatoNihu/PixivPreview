@@ -8,6 +8,7 @@ const Caption_1 = require("../caption/Caption");
 const Setting_1 = require("../others/Setting");
 const ContainerFactory_1 = require("./ContainerFactory");
 const jsonInterface_1 = require("../others/jsonInterface");
+const CommentList_1 = require("./CommentList");
 /***
  * 各種ユーティリティ関数
  * ポップアップ機能に関するユーティリティ関数軍が長くなったため
@@ -366,6 +367,14 @@ class Util {
                         await caption.popup();
                         caption.adjustSize(outerContainer);
                     }
+                    if (setting.popupComment) {
+                        const commentList = new CommentList_1.CommentList(pixivJson);
+                        commentList.setCaptionContainer(captionContainer);
+                        commentList.setInnerContainer(innerContainer);
+                        commentList.setClassName(Util.popupClass);
+                        await commentList.popup();
+                        commentList.adjustSize(outerContainer);
+                    }
                     Util.adjustOffset(outerContainer);
                     Util.adjustSize(outerContainer, innerContainer, captionContainer);
                     Util.addMouseMove(outerContainer);
@@ -555,7 +564,8 @@ class Util {
     static addMouseMove(elm) {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         let dragging = false;
-        const elementDrag = (e) => {
+        //let scroll = false
+        const dragElement = (e) => {
             dragging = true;
             e = e || window.event;
             e.preventDefault();
@@ -577,20 +587,23 @@ class Util {
             }
             dragging = false;
         };
-        const dragMouseDown = (e) => {
+        const mouseDownEvent = (e) => {
             e = e || window.event;
-            e.preventDefault();
-            // get the mouse cursor position at startup:
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            // call a function whenever the cursor moves:
-            document.onmousemove = elementDrag;
+            // スクロールバーより内側の場合
+            if (e.offsetX <= e.target.clientWidth && e.offsetY <= e.target.clientHeight) {
+                e.preventDefault();
+                // get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // call a function whenever the cursor moves:
+                document.onmousemove = dragElement;
+                elm.onmouseleave = () => {
+                    this.cleanContainer(elm);
+                };
+            }
         };
-        elm.onmousedown = dragMouseDown;
-        elm.onmouseleave = () => {
-            this.cleanContainer(elm);
-        };
+        elm.onmousedown = mouseDownEvent;
     }
     removePopup() {
         const outerContainer = document.getElementById(Util.outerContainerID);

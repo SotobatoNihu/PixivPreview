@@ -12,6 +12,7 @@ class Setting {
         this.openComment = true;
         this.usePopup = true;
         this.popupCaption = true;
+        this.popupComment = true;
         this.popupScale = 0.7;
         this.uiComponent = [Enum_1.uiComponent.image, Enum_1.uiComponent.manga, Enum_1.uiComponent.ugoira, Enum_1.uiComponent.caption];
     }
@@ -25,6 +26,7 @@ class Setting {
                 this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
                 this.usePopup = (jsonData.usePopup == null) ? true : jsonData.usePopup;
                 this.popupCaption = (jsonData.popupCaption == null) ? true : jsonData.popupCaption;
+                this.popupComment = (jsonData.popupComment == null) ? true : jsonData.popupComment;
                 this.popupScale = (jsonData.popupScale == null) ? 0.7 : jsonData.popupScale;
             }
         });
@@ -39,6 +41,7 @@ class Setting {
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment;
         this.usePopup = (jsonData.usePopup == null) ? true : jsonData.usePopup;
         this.popupCaption = (jsonData.popupCaption == null) ? true : jsonData.popupCaption;
+        this.popupComment = (jsonData.popupComment == null) ? true : jsonData.popupComment;
         this.popupScale = (jsonData.usePopup == null) ? 0.7 : jsonData.popupScale;
     }
     get getJsonString() {
@@ -48,6 +51,7 @@ class Setting {
             openComment: this.openComment,
             usePopup: this.usePopup,
             popupCaption: this.popupCaption,
+            popupComment: this.popupComment,
             popupScale: this.popupScale,
         };
         return JSON.stringify(obj);

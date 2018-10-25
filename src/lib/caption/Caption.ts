@@ -8,21 +8,21 @@ import {Util} from "../utilities/Util";
 export class Caption {
 
     private innerContainer: HTMLElement;
-    private captionContainer:HTMLElement
-    private descriptionElem:HTMLElement
-    private tagElem:HTMLElement
-    private infoElem:HTMLElement
+    private captionContainer: HTMLElement
+    private descriptionElem: HTMLElement
+    private tagElem: HTMLElement
+    private infoElem: HTMLElement
     private className: string;
     private readonly pixivJson: PixivJson;
 
     private captionContainerID: string = 'popup-caption-container'
     private captionDescriptionID: string = 'popup-caption-text'
-    private captionTagID: string='popup-caption-tag'
-    private captionDateID: string='popup-caption-date'
-    private captionLikeID: string='popup-caption-like'
-    private captionBookmarkID: string='popup-caption-bookmark'
-    private captionViewID: string='popup-caption-view'
-    private captionInfoID: string='popup-caption-infomation'
+    private captionTagID: string = 'popup-caption-tag'
+    private captionDateID: string = 'popup-caption-date'
+    private captionLikeID: string = 'popup-caption-like'
+    private captionBookmarkID: string = 'popup-caption-bookmark'
+    private captionViewID: string = 'popup-caption-view'
+    private captionInfoID: string = 'popup-caption-infomation'
     private likeIcon: string = `<img src="https://s.pximg.net/www/js/spa/260127df5fe9ade778ec4be463deaf01.svg" width="12" height="12">`
     private bookmarkIcon: string = `<svg viewBox="0 0 12 12" width="12" height="12" class="css-1hamw6p e1rs6xf14"><path fill="currentColor" d="
         M9,0.75 C10.6568542,0.75 12,2.09314575 12,3.75 C12,6.68851315 10.0811423,9.22726429 6.24342696,11.3662534
@@ -44,7 +44,6 @@ export class Caption {
         background-color:white;
         word-wrap:break-word;
         word-break:break-all;
-        
         `
 
     private descriptionContainerCSS: string
@@ -58,10 +57,10 @@ export class Caption {
         width: auto;
         color:rgb(173, 173, 173); 
         line-height=1;`;
-    constructor(pixivJson:PixivJson){
-        this.pixivJson=pixivJson
 
-}
+    constructor(pixivJson: PixivJson) {
+        this.pixivJson = pixivJson
+    }
 
     /**
      * キャプションをポップアップする
@@ -70,12 +69,12 @@ export class Caption {
      * @param json
      */
     popup() {
-        const captionContainer=this.captionContainer
-        const innerContainer=this.innerContainer
-        const json=this.pixivJson
+        const captionContainer = this.captionContainer
+        const innerContainer = this.innerContainer
+        const json = this.pixivJson
 
         //既存のキャプションコンテナがあれば破棄
-        captionContainer.innerText=''
+        captionContainer.innerText = ''
 
         //テキストコンテナを作成
         const factory = new ContainerFactory()
@@ -126,10 +125,10 @@ export class Caption {
         captionContainer.appendChild(tagElem)
         captionContainer.appendChild(infoElem)
 
-        this.descriptionElem=descriptionElem
-        this.tagElem=tagElem
-        this.infoElem=infoElem
-        captionContainer.style.display='block'
+        this.descriptionElem = descriptionElem
+        this.tagElem = tagElem
+        this.infoElem = infoElem
+        captionContainer.style.display = 'block'
 
     }
 
@@ -139,7 +138,7 @@ export class Caption {
     private getTagHtml(json: PixivJson): HTMLElement {
         let outerTagElem: HTMLElement = document.createElement('ul')
         // @ts-ignore
-        outerTagElem.style.paddingInlineStart='0px'
+        outerTagElem.style.paddingInlineStart = '0px'
         //outerTagElem.setAttribute('align','left')
 
         for (const tagJson of json.body.tags.tags) {
@@ -157,25 +156,25 @@ export class Caption {
 
 
     setInnerContainer(innerContainer: HTMLElement) {
-        this.innerContainer=innerContainer
+        this.innerContainer = innerContainer
     }
 
-    setClassName(className:string){
-        this.className=className
+    setClassName(className: string) {
+        this.className = className
     }
 
 
-    adjustSize(outerContainer:HTMLElement) {
+    adjustSize(outerContainer: HTMLElement) {
 
-        this.descriptionElem.style.height= this.descriptionElem.clientHeight>100 ? `${100}px` : `${this.descriptionElem.clientHeight}px`
+        this.descriptionElem.style.height = this.descriptionElem.clientHeight > 100 ? `${100}px` : `${this.descriptionElem.clientHeight}px`
 
-        const offset=Util.getOffset(outerContainer)
-        outerContainer.style.left=`${offset.left}px`
-        outerContainer.style.top=`${offset.top}px`
+        const offset = Util.getOffset(outerContainer)
+        outerContainer.style.left = `${offset.left}px`
+        outerContainer.style.top = `${offset.top}px`
 
-        this.captionContainer.style.width=`${this.innerContainer.offsetWidth}px`
-        outerContainer.style.width=`${this.innerContainer.clientWidth}px`
-        outerContainer.style.height=`${this.captionContainer.clientHeight+this.innerContainer.clientHeight}px`
+        this.captionContainer.style.width = `${this.innerContainer.offsetWidth}px`
+        outerContainer.style.width = `${this.innerContainer.clientWidth}px`
+        outerContainer.style.height = `${this.captionContainer.clientHeight + this.innerContainer.clientHeight}px`
     }
 
 
@@ -196,6 +195,6 @@ export class Caption {
 
 
     setCaptionContainer(captionContainer: HTMLElement) {
-        this.captionContainer=captionContainer
+        this.captionContainer = captionContainer
     }
 }

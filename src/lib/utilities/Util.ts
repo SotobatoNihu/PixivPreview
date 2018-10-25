@@ -7,6 +7,7 @@ import {Page} from "../others/Page";
 import {Setting} from "../others/Setting";
 import {ContainerFactory} from './ContainerFactory';
 import {PixivJson} from '../others/jsonInterface';
+import {CommentList} from "./CommentList";
 
 
 /***
@@ -392,9 +393,18 @@ export class Util {
                         await caption.popup()
                         caption.adjustSize(outerContainer)
                     }
+                    if (setting.popupComment) {
+                        const commentList = new CommentList(pixivJson)
+                        commentList.setCaptionContainer(captionContainer)
+                        commentList.setInnerContainer(innerContainer)
+                        commentList.setClassName(Util.popupClass)
+                        await commentList.popup()
+                        commentList.adjustSize(outerContainer)
+
+                    }
 
                     Util.adjustOffset(outerContainer)
-                    Util.adjustSize(outerContainer,innerContainer,captionContainer)
+                    Util.adjustSize(outerContainer, innerContainer, captionContainer)
 
                     Util.addMouseMove(outerContainer)
 
@@ -428,13 +438,14 @@ export class Util {
     }
 
     static adjustOffset(elem) {
-        const offset=Util.getOffset(elem)
-        elem.style.left=`${offset.left}px`
-        elem.style.top=`${offset.top}px`
+        const offset = Util.getOffset(elem)
+        elem.style.left = `${offset.left}px`
+        elem.style.top = `${offset.top}px`
     }
-    static adjustSize(outerContainer:HTMLElement,innerContainer:HTMLElement,captionContainer:HTMLElement) {
-        outerContainer.style.width=`${innerContainer.clientWidth}px`
-        outerContainer.style.height=`${captionContainer.clientHeight+innerContainer.clientHeight}px`
+
+    static adjustSize(outerContainer: HTMLElement, innerContainer: HTMLElement, captionContainer: HTMLElement) {
+        outerContainer.style.width = `${innerContainer.clientWidth}px`
+        outerContainer.style.height = `${captionContainer.clientHeight + innerContainer.clientHeight}px`
     }
 
 
@@ -611,7 +622,8 @@ export class Util {
     private static addMouseMove(elm: HTMLElement) {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         let dragging = false
-        const elementDrag = (e) => {
+        //let scroll = false
+        const dragElement = (e) => {
             dragging = true
             e = e || window.event;
             e.preventDefault();
@@ -625,7 +637,6 @@ export class Util {
             elm.style.left = (elm.offsetLeft - pos1) + "px";
         }
 
-
         const closeDragElement = () => {
             // stop moving when mouse button is released:
             document.onmouseup = null;
@@ -635,21 +646,23 @@ export class Util {
             }
             dragging = false
         }
-        const dragMouseDown = (e) => {
+        const mouseDownEvent = (e) => {
             e = e || window.event;
-            e.preventDefault();
-            // get the mouse cursor position at startup:
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            // call a function whenever the cursor moves:
-            document.onmousemove = elementDrag;
+            // スクロールバーより内側の場合
+            if (e.offsetX <= e.target.clientWidth && e.offsetY <= e.target.clientHeight) {
+                e.preventDefault();
+                // get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // call a function whenever the cursor moves:
+                document.onmousemove = dragElement;
+                elm.onmouseleave = () => {
+                    this.cleanContainer(elm)
+                };
+            }
         }
-
-        elm.onmousedown = dragMouseDown;
-        elm.onmouseleave = () => {
-            this.cleanContainer(elm)
-        };
+        elm.onmousedown = mouseDownEvent;
     }
 
     removePopup() {
@@ -658,7 +671,6 @@ export class Util {
     }
 
     private static cleanContainer(outerContainer) {
-
         const innerContainer = document.getElementById(this.innerContainerID)
         const captionContainer = document.getElementById(this.captionContainerID)
         innerContainer.innerText = ''

@@ -13,9 +13,9 @@ export class Setting {
     openComment = true
     usePopup = true
     popupCaption = true
+    popupComment = true
     popupScale = 0.7
     uiComponent: Array<uiComponent> = [uiComponent.image, uiComponent.manga, uiComponent.ugoira, uiComponent.caption]
-
     constructor(){
 
     }
@@ -25,13 +25,13 @@ export class Setting {
         await GM.getValue("pixiv_viewutil_setting").then(jsonString => {
 
                 if (jsonString !== undefined) {
-
                     const jsonData = JSON.parse(jsonString);
                     this.changeIllustPageLayout = (jsonData.changeIllustPageLayout == null) ? true : jsonData.changeIllustPageLayout
                     this.changeMemberPageLayout = (jsonData.changeMemberPageLayout == null) ? true : jsonData.changeMemberPageLayout
                     this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment
                     this.usePopup = (jsonData.usePopup == null) ? true : jsonData.usePopup
                     this.popupCaption = (jsonData.popupCaption == null) ? true : jsonData.popupCaption
+                    this.popupComment = (jsonData.popupComment == null) ? true : jsonData.popupComment
                     this.popupScale = (jsonData.popupScale == null) ? 0.7 : jsonData.popupScale;
                 }
             }
@@ -49,6 +49,7 @@ export class Setting {
         this.openComment = (jsonData.openComment == null) ? true : jsonData.openComment
         this.usePopup = (jsonData.usePopup == null) ? true : jsonData.usePopup
         this.popupCaption = (jsonData.popupCaption == null) ? true : jsonData.popupCaption
+        this.popupComment = (jsonData.popupComment == null) ? true : jsonData.popupComment
         this.popupScale = (jsonData.usePopup == null) ? 0.7 : jsonData.popupScale;
     }
 
@@ -59,6 +60,7 @@ export class Setting {
             openComment: this.openComment,
             usePopup: this.usePopup,
             popupCaption:this.popupCaption,
+            popupComment:this.popupComment,
             popupScale: this.popupScale,
         }
         return JSON.stringify(obj)

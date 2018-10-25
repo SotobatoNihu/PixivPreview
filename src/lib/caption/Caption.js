@@ -34,7 +34,6 @@ class Caption {
         background-color:white;
         word-wrap:break-word;
         word-break:break-all;
-        
         `;
         this.descriptionContainerCSS = `font-size: normal; 
           width: auto; 
