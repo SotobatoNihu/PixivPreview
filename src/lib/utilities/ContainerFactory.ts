@@ -24,7 +24,7 @@ export class ContainerFactory implements ContainerFactoryInterface {
 
     id: string = ''
     classname: string = ''
-    private innerHtml: string = ''
+    private innerHtml: string  = ''
     private innerText: string = ''
 
     cssText: string = ''
@@ -99,7 +99,6 @@ export class ContainerFactory implements ContainerFactoryInterface {
         this.cssText = cssString
         return this
     }
-
 
     init() {
         this.id = ''

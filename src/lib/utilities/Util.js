@@ -1,14 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Enum_1 = require("../others/Enum");
-const Illust_1 = require("../artworks/Illust");
-const Manga_1 = require("../artworks/Manga");
-const Ugoira_1 = require("../artworks/Ugoira");
-const Caption_1 = require("../caption/Caption");
 const Setting_1 = require("../others/Setting");
 const ContainerFactory_1 = require("./ContainerFactory");
 const jsonInterface_1 = require("../others/jsonInterface");
-const CommentList_1 = require("./CommentList");
+const PopupScreen_1 = require("./PopupScreen");
 /***
  * 各種ユーティリティ関数
  * ポップアップ機能に関するユーティリティ関数軍が長くなったため
@@ -19,28 +15,7 @@ class Util {
         //private utilIcon: string = 'pixiv-view-util-gear'
         this.settingIconID = 'pixiv-view-util-gear';
         //あとで各要素やドキュメントに挿入するCSS文字列
-        this.outerContainerCSS = `
-        position:absolute;
-        z-index:10000;
-        display:block;
-        background-color:#FFF;
-        border: 1px solid black;
-        `;
         this._iconElem = null;
-        this.captionContainerCSS = `
-        white-space:pre-wrap;
-        z-index:10001;
-        position:relative;
-        width:auto;
-        height:auto;
-        display:none;
-        max-width:${window.innerWidth}px;
-        max-height:${window.innerHeight}px;
-        background-color:white;
-        word-wrap:break-word;
-        word-break:break-all;
-        
-        `;
         this.gearCSS = `width: 25px; 
          height: 25px;
          color:rgb(173, 173, 173);
@@ -83,37 +58,6 @@ class Util {
     cursor: pointer;
 }
 `;
-        this.pixpediaItemCSS = `.popup-pixpedia-icon{
-    display: inline-block;
-    margin-left: 2px;
-    width: 15px;
-    height: 14px;
-    vertical-align: -2px;
-    text-decoration: none;
-    background: url(https://s.pximg.net/www/images/inline/pixpedia.png) no-repeat;
-    }
-.popup-pixpedia-no-icon{
-    display: inline-block;
-    margin-left: 2px;
-    width: 15px;
-    height: 14px;
-    vertical-align: -2px;
-    text-decoration: none;
-     background: url(https://s.pximg.net/www/images/inline/pixpedia-no-item.png) no-repeat;
-}
-     `;
-    }
-    innerContainerCSS(scale) {
-        return `
-        border: 5px solid black;
-        background-color:#111;
-        position:relative;
-        width:100%;
-        height:100%;
-        float:left;
-        max-width:${window.innerWidth}px;
-        max-height:${window.innerHeight}px;
-        `;
     }
     /**
      * 設定アイコンをトップページにセットする
@@ -162,21 +106,26 @@ class Util {
             this.setConfigDialog();
         }
         if (setting.usePopup && (page.isEnable(Enum_1.prop.popup_typeA)) || page.isEnable(Enum_1.prop.popup_typeB)) {
-            const factory = new ContainerFactory_1.ContainerFactory();
-            const outerContainer = factory
-                .setId(Util.outerContainerID)
+            this.setPopup(page, setting);
+            /*
+            const factory = new ContainerFactory()
+            const outerContainer: HTMLElement = factory
+                .setId(this.outerContainerID)
                 .setClass(Util.popupClass)
                 .setCSS(this.outerContainerCSS)
-                .createDiv();
+                .createDiv()
             this.setPopup(outerContainer, page, setting);
             console.log("set popup");
+            */
         }
-        else {
-            const outerContainer = document.getElementById(Util.outerContainerID);
-            if (outerContainer) {
-                outerContainer.style.display = 'none';
-            }
+        //else {
+        /*
+        const outerContainer = document.getElementById(Util.outerContainerID)
+        if (outerContainer) {
+            outerContainer.style.display = 'none'
         }
+        */
+        // }
     }
     /**
      * 画面読み込み完了時に行うこと。initExecuteと同様
@@ -295,28 +244,9 @@ class Util {
      * @param page
      * @param setting
      */
-    setPopup(outerContainer, page, setting) {
-        // const popupUtil = new PopupUtil();
-        //IDやCSSなどをセットしたHTML要素を作成
-        const factory = new ContainerFactory_1.ContainerFactory();
-        //ポップアップの外枠となるouterContainer
-        const innerContainer = factory
-            .setId(Util.innerContainerID)
-            .setClass(Util.popupClass)
-            .setCSS(this.innerContainerCSS(setting.popupScale))
-            .createDiv();
-        const captionContainer = factory
-            .setId(Util.captionContainerID)
-            .setClass(Util.popupClass)
-            .setCSS(this.captionContainerCSS)
-            .createDiv();
-        outerContainer.appendChild(captionContainer);
-        outerContainer.appendChild(innerContainer);
-        document.body.appendChild(outerContainer);
-        //ドキュメントにCSSを登録
-        const style = document.createElement('style');
-        style.textContent = this.pixpediaItemCSS;
-        document.getElementsByTagName('head')[0].appendChild(style);
+    //setPopup(outerContainer: HTMLElement, page: Page, setting: Setting): void {
+    setPopup(page, setting) {
+        const popupScreen = new PopupScreen_1.PopupScreen(page, setting);
         // イラスト＆漫画のクリックイベントを登録する
         $('body').on('mouseenter', 'a[href*="member_illust.php?mode=medium&illust_id="]', function () {
             //クリック対象とhrefがある要素の入れ子関係は２パターン以上あるため注意
@@ -333,7 +263,6 @@ class Util {
             const illustID = Number(matches[2]);
             //ポップアップを実行
             $(clickElem).on('click', async function (e) {
-                // outerContainer.style.display = 'block';
                 //イラストIDを元にjsonを入手
                 await fetch(`https://www.pixiv.net/ajax/illust/${illustID}`, {
                     method: 'GET',
@@ -344,88 +273,49 @@ class Util {
                         return response.json();
                     }
                 }).then(async function (json) {
-                    //jsonをpixivJsonオブジェクトに格納
                     const pixivJson = new jsonInterface_1.PixivJson(json);
-                    outerContainer.style.display = 'block';
-                    const artwork = Util.isManga(pixivJson) ? new Manga_1.Manga(pixivJson) : new Illust_1.Illust(page, innerContainer, pixivJson);
-                    artwork.setInnerScreen = innerContainer;
-                    artwork.setClassName = Util.popupClass;
-                    artwork.adjustScreenSize(setting.popupScale);
-                    artwork.popup($(hrefElem).hasClass("on"));
-                    if (Util.isManga(pixivJson)) {
-                        outerContainer.style.width = innerContainer.style.width;
-                        outerContainer.style.height = innerContainer.style.height;
-                        const offset = artwork.getOffset(outerContainer);
-                        outerContainer.style.top = `${offset.top}px`;
-                        outerContainer.style.left = `${offset.left}px`;
+                    popupScreen.setPixivJson(pixivJson);
+                    popupScreen.popupArtwork($(hrefElem).hasClass("on"));
+                    if (setting.popupComment) {
+                        popupScreen.popupComment();
                     }
                     if (setting.popupCaption) {
-                        const caption = new Caption_1.Caption(pixivJson);
-                        caption.setCaptionContainer(captionContainer);
-                        caption.setInnerContainer(innerContainer);
-                        caption.setClassName(Util.popupClass);
-                        await caption.popup();
-                        caption.adjustSize(outerContainer);
+                        popupScreen.popupCaption();
                     }
-                    if (setting.popupComment) {
-                        const commentList = new CommentList_1.CommentList(pixivJson);
-                        commentList.setCaptionContainer(captionContainer);
-                        commentList.setInnerContainer(innerContainer);
-                        commentList.setClassName(Util.popupClass);
-                        await commentList.popup();
-                        commentList.adjustSize(outerContainer);
-                    }
-                    Util.adjustOffset(outerContainer);
-                    Util.adjustSize(outerContainer, innerContainer, captionContainer);
-                    Util.addMouseMove(outerContainer);
-                    const imgScale = artwork.imgScale;
-                    if (Util.isUgoira(pixivJson)) {
+                    if (popupScreen.isUgoira()) {
                         //うごイラのメタ情報のJSONを入手
                         await fetch(`https://www.pixiv.net/ajax/illust/${pixivJson.body.illustId}/ugoira_meta`)
                             .then(function (response) {
                             return response.json();
                         }).then(async (metajson) => {
-                            //pixivJsonとメタ情報からうごイラオブジェクトを作成
-                            const ugoira = new Ugoira_1.Ugoira(pixivJson, new jsonInterface_1.PixivJson(metajson));
-                            ugoira.setInnerContainer(innerContainer);
-                            ugoira.setClassName(Util.popupClass);
-                            await ugoira.init().then(() => {
-                                ugoira.resize(outerContainer, setting.popupScale);
-                                ugoira.popup(outerContainer);
-                            });
+                            await popupScreen.popupUgoira(new jsonInterface_1.PixivJson(metajson));
                         });
                     }
+                }).then(() => {
+                    popupScreen.adjustSize();
+                    popupScreen.adjustOffset();
+                    popupScreen.addMouseMove();
                 });
+                /*
+               .then(()=>popupScreen.adjustOffset())
+               .then(()=>popupScreen.addMouseMove())
+          () => {
+                   popupScreen.relocate()
+                   popupScreen.adjustSize()
+                   popupScreen.addMouseMove()
+                   popupScreen.adjustOffset()
+                   }
+           */
             });
         });
-        window.onresize = function () {
-            outerContainer.style.maxWidth = `${window.innerWidth * setting.popupScale}px`;
-        };
     }
-    static adjustOffset(elem) {
-        const offset = Util.getOffset(elem);
-        elem.style.left = `${offset.left}px`;
-        elem.style.top = `${offset.top}px`;
+    /*
+    adjustOffset(elem) {
+        const offset = Util.getOffset(elem)
+        elem.style.left = `${offset.left}px`
+        elem.style.top = `${offset.top}px`
     }
-    static adjustSize(outerContainer, innerContainer, captionContainer) {
-        outerContainer.style.width = `${innerContainer.clientWidth}px`;
-        outerContainer.style.height = `${captionContainer.clientHeight + innerContainer.clientHeight}px`;
-    }
-    isIllust(json) {
-        return json.body.illustType === 0;
-    }
-    isManga(json) {
-        return json.body.illustType === 1 || (json.body.pageCount && Number(json.body.pageCount) > 1);
-    }
-    isUgoira(json) {
-        return json.body.illustType === 2;
-    }
-    static getUserID(json) {
-        return json.body.tags.authorId;
-    }
-    static getPageNum(json) {
-        return Number(json.body.pageCount);
-    }
+    */
     /**
      * ダイアログ（モーダル）をセットする
      * @param iconID
@@ -468,6 +358,13 @@ class Util {
         <input type="radio"  name='pixivutil-setting4' id="pixivutil-setting4-no" value="0" checked  />
         <label for="dummy_0" data-label="OFF">OFF</label>
     </div>
+        <div id="pixiv-set-PopupComment">
+     Popup Comment
+        <input type="radio"  name='pixivutil-setting5' id="pixivutil-setting5-yes" value="1"/>
+        <label for="dummy_1" data-label="ON">ON</label>
+        <input type="radio"  name='pixivutil-setting5' id="pixivutil-setting5-no" value="0" checked  />
+        <label for="dummy_0" data-label="OFF">OFF</label>
+    </div>
     <div >
     Popup size (min <-> max)
       <input type="range" value="0.7" min="0.3" max="1.2" step="0.1" id="pixiv-set-Scale" />
@@ -488,7 +385,8 @@ class Util {
         const elem2 = document.getElementsByName('pixivutil-setting2')[0];
         const elem3 = document.getElementsByName('pixivutil-setting3')[0];
         const elem4 = document.getElementsByName('pixivutil-setting4')[0];
-        const elem5 = document.getElementById('pixiv-set-Scale');
+        const elem5 = document.getElementsByName('pixivutil-setting5')[0];
+        const scale = document.getElementById('pixiv-set-Scale');
         setting.init().then(() => {
             // @ts-ignore
             if (setting.changeIllustPageLayout && !elem1.checked)
@@ -503,7 +401,10 @@ class Util {
             if (setting.popupCaption && !elem4.checked)
                 elem4.checked = true;
             // @ts-ignore
-            elem5.value = String(setting.popupScale);
+            if (setting.popupComment && !elem5.checked)
+                elem5.checked = true;
+            // @ts-ignore
+            scale.value = String(setting.popupScale);
         });
         /**
          * モーダルを閉じたときに設定を保存
@@ -519,16 +420,10 @@ class Util {
             // @ts-ignore
             setting.popupCaption = elem4.checked;
             // @ts-ignore
-            setting.popupScale = elem5.value;
+            setting.popupComment = elem5.checked;
+            // @ts-ignore
+            setting.popupScale = scale.value;
             setting.save();
-            /*
-            const outerContainer=document.getElementById(Util.outerContainerID)
-            const page=new Page(document.URL)
-            const util=new Util()
-            util.onloadExecute(setting, page);
-            util.removePopup()
-            util.setPopup(outerContainer,page,setting)
-            */
         };
         //modal画面の余白をクリックした場合
         window.onclick = function (event) {
@@ -552,87 +447,5 @@ class Util {
             }
         }
     }
-    static isIllust(pixivJson) {
-        return pixivJson.body.illustType === 0;
-    }
-    static isManga(pixivJson) {
-        return pixivJson.body.illustType === 1 || (pixivJson.body.pageCount && Number(pixivJson.body.pageCount) > 1);
-    }
-    static isUgoira(pixivJson) {
-        return pixivJson.body.illustType === 2;
-    }
-    static addMouseMove(elm) {
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        let dragging = false;
-        //let scroll = false
-        const dragElement = (e) => {
-            dragging = true;
-            e = e || window.event;
-            e.preventDefault();
-            // calculate the new cursor position:
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            // set the element's new position:
-            elm.style.top = (elm.offsetTop - pos2) + "px";
-            elm.style.left = (elm.offsetLeft - pos1) + "px";
-        };
-        const closeDragElement = () => {
-            // stop moving when mouse button is released:
-            document.onmouseup = null;
-            document.onmousemove = null;
-            if (!dragging) {
-                this.cleanContainer(elm);
-            }
-            dragging = false;
-        };
-        const mouseDownEvent = (e) => {
-            e = e || window.event;
-            // スクロールバーより内側の場合
-            if (e.offsetX <= e.target.clientWidth && e.offsetY <= e.target.clientHeight) {
-                e.preventDefault();
-                // get the mouse cursor position at startup:
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                // call a function whenever the cursor moves:
-                document.onmousemove = dragElement;
-                elm.onmouseleave = () => {
-                    this.cleanContainer(elm);
-                };
-            }
-        };
-        elm.onmousedown = mouseDownEvent;
-    }
-    removePopup() {
-        const outerContainer = document.getElementById(Util.outerContainerID);
-        Util.removeContainer(outerContainer);
-    }
-    static cleanContainer(outerContainer) {
-        const innerContainer = document.getElementById(this.innerContainerID);
-        const captionContainer = document.getElementById(this.captionContainerID);
-        innerContainer.innerText = '';
-        captionContainer.innerText = '';
-        outerContainer.style.display = 'none';
-    }
-    static removeContainer(elem) {
-        elem.innerText = '';
-        elem.parentNode.removeChild(elem);
-    }
-    static getOffset(elem) {
-        const w_height = $(window).height();
-        const w_width = $(window).width();
-        const el_height = $(elem).height();
-        const el_width = $(elem).width();
-        const scroll_height = $(window).scrollTop();
-        const position_h = scroll_height + (w_height - el_height) / 2;
-        const position_w = (w_width - el_width) / 2;
-        return { top: Math.round(position_h), left: Math.round(position_w) };
-    }
 }
-Util.innerContainerID = 'popup-inner-container';
-Util.outerContainerID = 'popup-outer-container';
-Util.captionContainerID = 'popup-caption-container';
-Util.popupClass = 'popup-util';
 exports.Util = Util;

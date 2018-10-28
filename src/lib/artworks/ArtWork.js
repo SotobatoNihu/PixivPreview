@@ -45,7 +45,7 @@ class ArtWork {
         const position_w = (w_width - el_width) / 2;
         return { top: Math.round(position_h), left: Math.round(position_w) };
     }
-    set setInnerScreen(elem) {
+    set setScreenContainer(elem) {
         this.innerScreen = elem;
     }
     set setClassName(className) {

@@ -1,12 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ContainerFactory_1 = require("../utilities/ContainerFactory");
-const Util_1 = require("../utilities/Util");
-/**
- * html上のページごとのイラスト情報を管理する
- */
 class Caption {
-    constructor(pixivJson) {
+    constructor(className) {
         this.captionContainerID = 'popup-caption-container';
         this.captionDescriptionID = 'popup-caption-text';
         this.captionTagID = 'popup-caption-tag';
@@ -26,15 +22,35 @@ class Caption {
         white-space:pre-wrap;
         z-index:10001;
         position:relative;
-       
         width:auto;
         height:auto;
+        border: 1px solid #000;
         max-width:${window.innerWidth}px;
         max-height:${window.innerHeight}px;
         background-color:white;
         word-wrap:break-word;
-        word-break:break-all;
-        `;
+       word-break:break-all;
+        
+       `;
+        this.pixpediaItemCSS = `.popup-pixpedia-icon{
+    display: inline-block;
+    margin-left: 2px;
+    width: 15px;
+    height: 14px;
+    vertical-align: -2px;
+    text-decoration: none;
+    background: url(https://s.pximg.net/www/images/inline/pixpedia.png) no-repeat;
+    }
+.popup-pixpedia-no-icon{
+    display: inline-block;
+    margin-left: 2px;
+    width: 15px;
+    height: 14px;
+    vertical-align: -2px;
+    text-decoration: none;
+     background: url(https://s.pximg.net/www/images/inline/pixpedia-no-item.png) no-repeat;
+}
+     `;
         this.descriptionContainerCSS = `font-size: normal; 
           width: auto; 
           height:auto;
@@ -43,9 +59,13 @@ class Caption {
         background-color:white;
         font-size:xx-small;
         width: auto;
-        color:rgb(173, 173, 173); 
+        color:#999999; 
         line-height=1;`;
-        this.pixivJson = pixivJson;
+        this.captionContainer = new ContainerFactory_1.ContainerFactory()
+            .setId(this.captionContainerID)
+            .setClass(className)
+            .setCSS(this.captionContainerCSS)
+            .createDiv();
     }
     /**
      * キャプションをポップアップする
@@ -55,7 +75,7 @@ class Caption {
      */
     popup() {
         const captionContainer = this.captionContainer;
-        const innerContainer = this.innerContainer;
+        //const innerContainer = this.innerContainer
         const json = this.pixivJson;
         //既存のキャプションコンテナがあれば破棄
         captionContainer.innerText = '';
@@ -122,26 +142,19 @@ class Caption {
         }
         return outerTagElem;
     }
-    setInnerContainer(innerContainer) {
-        this.innerContainer = innerContainer;
-    }
     setClassName(className) {
         this.className = className;
     }
-    adjustSize(outerContainer) {
+    adjustSize(screen) {
         this.descriptionElem.style.height = this.descriptionElem.clientHeight > 100 ? `${100}px` : `${this.descriptionElem.clientHeight}px`;
-        const offset = Util_1.Util.getOffset(outerContainer);
-        outerContainer.style.left = `${offset.left}px`;
-        outerContainer.style.top = `${offset.top}px`;
-        this.captionContainer.style.width = `${this.innerContainer.offsetWidth}px`;
-        outerContainer.style.width = `${this.innerContainer.clientWidth}px`;
-        outerContainer.style.height = `${this.captionContainer.clientHeight + this.innerContainer.clientHeight}px`;
+        this.captionContainer.style.width = `${screen.offsetWidth}px`;
     }
     /**
      * 大きさがあるHTMLelementを引数に、それが画面の中央に表示されるようになるelementのtop・leftの値を返す
      * @param elem
      */
-    getOffset(elem) {
+    /*
+    getOffset(elem: HTMLElement): { top: number; left: number } {
         const w_height = $(window).height();
         const w_width = $(window).width();
         const el_height = $(elem).height();
@@ -149,10 +162,27 @@ class Caption {
         const scroll_height = $(window).scrollTop();
         const position_h = scroll_height + (w_height - el_height) / 2;
         const position_w = (w_width - el_width) / 2;
-        return { top: Math.round(position_h), left: Math.round(position_w) };
+        return {top: Math.round(position_h), left: Math.round(position_w)};
+    }
+    */
+    setJson(pixivJson) {
+        this.pixivJson = pixivJson;
     }
     setCaptionContainer(captionContainer) {
         this.captionContainer = captionContainer;
+    }
+    getContainer() {
+        return this.captionContainer;
+    }
+    addCSS() {
+        //ドキュメントにCSSを登録
+        const style = document.createElement('style');
+        style.textContent = this.pixpediaItemCSS;
+        document.getElementsByTagName('head')[0].appendChild(style);
+    }
+    resetContainer() {
+        this.captionContainer = document.getElementById(this.captionContainerID);
+        this.captionContainer.innerText = "";
     }
 }
 exports.Caption = Caption;

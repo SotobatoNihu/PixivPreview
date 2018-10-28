@@ -52,7 +52,7 @@ import {PixivJson} from "../others/jsonInterface";
             return { top: Math.round(position_h), left: Math.round(position_w) };
         }
 
-        public set setInnerScreen(elem: HTMLElement){
+        public set setScreenContainer(elem: HTMLElement){
             this.innerScreen = elem;
         }
 

@@ -13,6 +13,26 @@ export class PixivJson implements PixivJsonInterface{
     }
 }
 
+
+
+export interface Comment {
+    userId: number;
+    userName: string;
+    img: string;
+    id: string;
+    comment: string;
+    stampId: string;
+    stampLink?: any;
+    commentDate: string;
+    commentRootId?: any;
+    commentParentId?: any;
+    commentUserId: string;
+    replyToUserId?: any;
+    replyToUserName?: any;
+    editable: boolean;
+    hasReplies: boolean;
+}
+
 export interface PixivJsonInterface {
     error: boolean;
     message: string;
@@ -28,6 +48,8 @@ export interface Urls {
 }
 
 export interface Body {
+    comments: Comment[];
+    hasNext: boolean;
     illustId: string;
     illustTitle: string;
     illustComment: string;

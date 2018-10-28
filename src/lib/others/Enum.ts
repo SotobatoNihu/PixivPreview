@@ -2,6 +2,7 @@
  * 本プロジェクトで使用する各種列挙型
  */
 
+
 export enum prop {
     changeIllustPageLayout,
     changeMemberPageLayout,

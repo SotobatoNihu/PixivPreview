@@ -53,7 +53,7 @@ class Ugoira {
             for (let i = 0; i < frames.length; i++) {
                 zip.file(frames[i].file)
                     .async("base64", function updateCallback(metadata) {
-                    console.log("progression: " + metadata.percent.toFixed(2) + " %");
+                    // console.log("progression: " + metadata.percent.toFixed(2) + " %");
                     if (metadata.percent === 100) {
                         finished = true;
                     }
@@ -68,68 +68,9 @@ class Ugoira {
             this.frameData = frameData;
         });
     }
-    /*
-        static pushImgElem(elem: HTMLImageElement) {
-            Util.imgArray.push(elem)
-        }
-    */
-    /*
-        static pushImgString(s: string) {
-            this.imgStringArray.push(s)
-
-        }
-
-        static pushFrame(num: number) {
-            this.frameArray.push(num)
-        }
-
-        get getImgArray() {
-            return this.imgArray
-        }
-
-        static  getImgStringArray() {
-            return this.imgStringArray
-        }
-
-        get getFrameArray() {
-            return Ugoira.frameArray
-        }
-
-        get getFrameNum(): number {
-            return Ugoira.imgArray.length
-        }
-
-        //フレーム情報の合計
-        get getIntervalSum(): number {
-            return Ugoira.frameArray.length > 1 ? Ugoira.frameArray.reduce((x, y) => x + y) : 0
-        }
-    */
-    setInnerContainer(innerContainer) {
+    setScreenContainer(innerContainer) {
         this.innerContainer = innerContainer;
     }
-    /*
-    setClassName(className: string) {
-        this.ugoiraContainer.className = className
-    }
-    */
-    /*
-        private resize(width: number, height: number,scale:number) {
-            let newHeight:number = height
-            let newWidth:number = width
-            if (height > window.innerHeight * scale || width > window.innerWidth * scale) {
-                const heightScale =height / Number(window.innerHeight * scale)
-                const widthScale = width / Number(window.innerWidth * scale)
-                if (heightScale > widthScale) {
-                    newHeight  /= heightScale
-                    newWidth /= heightScale
-                } else {
-                    newHeight /= widthScale
-                    newWidth /=widthScale
-                }
-            }
-            return {width: Math.round(newWidth), height: Math.round(newHeight)}
-        }
-    */
     resize(elem, scale) {
         const oldWidth = this.pixivJson.body.width;
         const oldHeight = this.pixivJson.body.height;
