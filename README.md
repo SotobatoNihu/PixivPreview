@@ -2,9 +2,11 @@
 
 #注意
 本リポジトリは、PixivViewUtilの旧バージョンであるver1.X.Xのリポジトリです。
+
 より新しいバージョンは以下のURLを参照してください。
 
 https://github.com/SotobatoNihu/PixivViewUtil
+
 https://greasyfork.org/ja/scripts/371314-pixiv-view-util
 
 Pixiv用のGreaseMonkeyスクリプトです。以下の機能を追加します
