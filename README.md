@@ -1,4 +1,4 @@
-# PixivViewUtil
+# PixivViewUtil_typescript
 
 #注意
 本リポジトリは、PixivViewUtilの旧バージョンであるver1.X.Xのリポジトリです。
